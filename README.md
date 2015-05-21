@@ -7,14 +7,13 @@ See the [docs](https://hexdocs.pm/phoenix_pubsub_redis/) for more information.
 To use Redis as your PubSub adapter, simply add it to your deps and Endpoint's config:
 
 
-You will also need to add `:redo` and `:poolboy` to your deps:
+You will also need to add `:redo` to your deps:
 
 
     # mix.exs
     defp deps do
       [{:phoenix_pubsub_redis, "~> 0.0.1"}],
-       {:redo, github: "heroku/redo"},
-       {:poolboy, "~> 1.4.2"}]
+       {:redo, github: "heroku/redo"}]
     end
 
 

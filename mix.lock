@@ -1,4 +1,5 @@
-%{"plug": {:hex, :plug, "0.12.2"},
+%{"phoenix": {:git, "git://github.com/phoenixframework/phoenix.git", "d93a99b19c024861c10bc2176a7b7593ba327203", [branch: "cm-extract-redis-pubsub"]},
+  "plug": {:hex, :plug, "0.12.2"},
   "poison": {:hex, :poison, "1.4.0"},
   "poolboy": {:hex, :poolboy, "1.5.1"},
   "redo": {:git, "git://github.com/heroku/redo.git", "c7722fc4e66b99fdd559b05b7ccce584977c69a4", []}}
