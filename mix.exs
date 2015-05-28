@@ -18,7 +18,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
 
   defp deps do
     [{:phoenix, github: "phoenixframework/phoenix", branch: "cm-extract-redis-pubsub"},
-     {:redo, github: "heroku/redo"},
+     {:redo, "~> 2.0.1"},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
   end
 end

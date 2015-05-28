@@ -2,4 +2,4 @@
   "plug": {:hex, :plug, "0.12.2"},
   "poison": {:hex, :poison, "1.4.0"},
   "poolboy": {:hex, :poolboy, "1.5.1"},
-  "redo": {:git, "git://github.com/heroku/redo.git", "c7722fc4e66b99fdd559b05b7ccce584977c69a4", []}}
+  "redo": {:hex, :redo, "2.0.1"}}
