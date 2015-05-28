@@ -1,4 +1,4 @@
-%{"phoenix": {:git, "git://github.com/phoenixframework/phoenix.git", "5f8d573a26bc846c1acdf00350c68b6f22a4cdfc", [branch: "cm-extract-redis-pubsub"]},
+%{"phoenix": {:git, "git://github.com/phoenixframework/phoenix.git", "c74946adf494a543d8f80685bf6724316af47f37", [branch: "cm-extract-redis-pubsub"]},
   "plug": {:hex, :plug, "0.12.2"},
   "poison": {:hex, :poison, "1.4.0"},
   "poolboy": {:hex, :poolboy, "1.5.1"},
