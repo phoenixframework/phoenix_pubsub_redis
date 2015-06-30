@@ -4,36 +4,40 @@
 
 See the [docs](https://hexdocs.pm/phoenix_pubsub_redis/) for more information.
 
+## Usage
+
 To use Redis as your PubSub adapter, simply add it to your deps and Endpoint's config:
 
+```elixir
+# mix.exs
+defp deps do
+  [{:phoenix_pubsub_redis, "~> 0.1.0"}],
+end
 
-    # mix.exs
-    defp deps do
-      [{:phoenix_pubsub_redis, "~> 0.1.0"}],
-    end
-
-
-
-    # config/config.exs
-    config :my_app, MyApp.Endpiont,
-    pubsub: [adapter: Phoenix.PubSub.Redis,
-                host: "192.168.1.100"]
+# config/config.exs
+config :my_app, MyApp.Endpiont,
+  pubsub: [adapter: Phoenix.PubSub.Redis,
+           host: "192.168.1.100"]
+```
 
 Config Options
 
-* `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
-* `:host` - The redis-server host IP, defaults `"127.0.0.1"`
-* `:port` - The redis-server port, defaults `6379`
-* `:password` - The redis-server password, defaults `""`
+Option       | Description                                                            | Default        |
+:----------- | :--------------------------------------------------------------------- | :------------- |
+`:name`      | The required name to register the PubSub processes, ie: `MyApp.PubSub` |                |
+`:host`      | The redis-server host IP                                               | `"127.0.0.1"`  |
+`:port`      | The redis-server port                                                  | `6379`         |
+`:password`  | The redis-server password                                              | `""`           |
 
+And also add `:phoenix_pubsub_redis` to your list of applications:
 
-And also add both `:redo` and `:poolboy` to your list of applications:
-
-    def application do
-      [mod: {MyApp, []},
-       applications: [..., :phoenix, :poolboy]]
-    end
-
+```elixir
+# mix.exs
+def application do
+  [mod: {MyApp, []},
+   applications: [..., :phoenix, :phoenix_pubsub_redis]]
+end
+```
 
 ## License
 
