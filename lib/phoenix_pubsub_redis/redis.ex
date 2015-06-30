@@ -10,18 +10,17 @@ defmodule Phoenix.PubSub.Redis do
         pubsub: [adapter: Phoenix.PubSub.Redis,
                  host: "192.168.1.100"]
 
-  You will also need to add `:redo` and `:poolboy` to your deps:
+  You will also need to add `:phoenix_pubsub_redis` to your deps:
 
       defp deps do
-        [{:redo, github: "heroku/redo"},
-         {:poolboy, "~> 1.4.2"}]
+        [{:phoenix_pubsub_redis, "~> 0.1.0"}]
       end
 
-  And also add both `:redo` and `:poolboy` to your list of applications:
+  And also add `:phoenix_pubsub_redis` to your list of applications:
 
       def application do
         [mod: {MyApp, []},
-         applications: [..., :phoenix, :poolboy]]
+         applications: [..., :phoenix, :phoenix_pubsub_redis]]
       end
 
   ## Options
