@@ -19,9 +19,11 @@ defmodule Phoenix.PubSub.RedisServer do
   Broadcasts message to redis. To be only called from {:perform, {m, f, a}}
   response to clients
   """
-  def broadcast(namespace, pool_name, redis_msg) do
+  def broadcast(pool_name, namespace, node_ref, from_pid, topic, msg) do
+    redis_msg = {@redis_msg_vsn, node_ref, from_pid, topic, msg}
+    bin_msg   = :erlang.term_to_binary(redis_msg)
+
     :poolboy.transaction pool_name, fn worker_pid ->
-      bin_msg = :erlang.term_to_binary(redis_msg)
       case GenServer.call(worker_pid, :conn) do
         {:ok, conn_pid} ->
           case :redo.cmd(conn_pid, ["PUBLISH", namespace, bin_msg]) do
@@ -47,11 +49,11 @@ defmodule Phoenix.PubSub.RedisServer do
 
     {:ok, %{local_name: Keyword.fetch!(opts, :local_name),
             pool_name: Keyword.fetch!(opts, :pool_name),
-            namespace: redis_namespace(Keyword.fetch!(opts, :name)),
+            namespace: Keyword.fetch!(opts, :namespace),
+            node_ref: Keyword.fetch!(opts, :node_ref),
             redo_pid: nil,
             redo_ref: nil,
             status: :disconnected,
-            node_ref: nil,
             opts: opts}}
   end
 
@@ -63,12 +65,6 @@ defmodule Phoenix.PubSub.RedisServer do
   def handle_call({:unsubscribe, pid, topic}, _from, state) do
     response = {:perform, {Local, :unsubscribe, [state.local_name, pid, topic]}}
     {:reply, response, state}
-  end
-
-  def handle_call({:broadcast, from_pid, topic, msg}, _from, state) do
-    redis_msg = {@redis_msg_vsn, state.node_ref, from_pid, topic, msg}
-    resp = {:perform, {__MODULE__, :broadcast, [state.namespace, state.pool_name, redis_msg]}}
-    {:reply, resp, state}
   end
 
   @doc """
@@ -120,8 +116,6 @@ defmodule Phoenix.PubSub.RedisServer do
     :ok
   end
 
-  defp redis_namespace(server_name), do: "phx:#{server_name}"
-
   defp establish_failed(state) do
     Logger.error "unable to establish redis connection. Attempting to reconnect..."
     :timer.send_after(@reconnect_after_ms, :establish_conn)
@@ -131,20 +125,6 @@ defmodule Phoenix.PubSub.RedisServer do
     ref = :redo.subscribe(redo_pid, state.namespace)
     {:noreply, %{state | redo_pid: redo_pid,
                          redo_ref: ref,
-                         status: :connected,
-                         node_ref: make_node_ref(state)}}
-  end
-
-  defp make_node_ref(state) do
-    :poolboy.transaction state.pool_name, fn worker_pid ->
-      {:ok, conn_pid} = GenServer.call(worker_pid, :conn)
-
-      {:ok, count} = case :redo.cmd(conn_pid, ["INCR", "#{state.namespace}:node_counter"]) do
-        {:error, reason} -> {:error, reason}
-        count -> {:ok, count}
-      end
-
-      count
-    end
+                         status: :connected}}
   end
 end

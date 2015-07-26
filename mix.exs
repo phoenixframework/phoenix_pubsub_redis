@@ -22,8 +22,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
   end
 
   defp deps do
-    # TODO bump phoenix version on next release
-    [{:phoenix, github: "phoenixframework/phoenix"},
+    [{:phoenix, "~> 0.15"},
      {:redo, "~> 2.0.1"},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
   end

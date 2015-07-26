@@ -51,15 +51,27 @@ defmodule Phoenix.PubSub.Redis do
 
     pool_name   = Module.concat(server_name, Pool)
     local_name  = Module.concat(server_name, Local)
+    namespace   = redis_namespace(server_name)
+    node_ref    = :crypto.strong_rand_bytes(24)
     server_opts = Keyword.merge(opts, name: server_name,
                                       local_name: local_name,
-                                      pool_name: pool_name)
+                                      pool_name: pool_name,
+                                      namespace: namespace,
+                                      node_ref: node_ref)
     pool_opts = [
       name: {:local, pool_name},
       worker_module: Phoenix.PubSub.RedisConn,
       size: opts[:pool_size] || @pool_size,
       max_overflow: 0
     ]
+
+    # Define a dispatch table so we don't have to go through
+    # a bottleneck to get the instruction to perform.
+    :ets.new(server_name, [:set, :named_table, read_concurrency: true])
+    true = :ets.insert(server_name, {:broadcast, Phoenix.PubSub.RedisServer,
+                                    [pool_name, namespace, node_ref]})
+    true = :ets.insert(server_name, {:subscribe, Phoenix.PubSub.Local, [local_name]})
+    true = :ets.insert(server_name, {:unsubscribe, Phoenix.PubSub.Local, [local_name]})
 
     children = [
       worker(Phoenix.PubSub.Local, [local_name]),
@@ -68,4 +80,6 @@ defmodule Phoenix.PubSub.Redis do
     ]
     supervise children, strategy: :one_for_all
   end
+
+  defp redis_namespace(server_name), do: "phx:#{server_name}"
 end
