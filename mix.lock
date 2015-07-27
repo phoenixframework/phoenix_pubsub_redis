@@ -1,4 +1,4 @@
-%{"phoenix": {:git, "git://github.com/phoenixframework/phoenix.git", "d944dd604f4522d684e8dd37fcb4d5ef150f2eca", []},
+%{"phoenix": {:hex, :phoenix, "0.15.0"},
   "plug": {:hex, :plug, "0.13.1"},
   "poison": {:hex, :poison, "1.4.0"},
   "poolboy": {:hex, :poolboy, "1.5.1"},
