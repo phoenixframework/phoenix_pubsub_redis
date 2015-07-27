@@ -57,20 +57,6 @@ defmodule Phoenix.PubSub.RedisServer do
             opts: opts}}
   end
 
-  def handle_call({:subscribe, pid, topic, opts}, _from, state) do
-    response = {:perform, {Local, :subscribe, [state.local_name, pid, topic, opts]}}
-    {:reply, response, state}
-  end
-
-  def handle_call({:unsubscribe, pid, topic}, _from, state) do
-    response = {:perform, {Local, :unsubscribe, [state.local_name, pid, topic]}}
-    {:reply, response, state}
-  end
-
-  @doc """
-  Decodes binary message and fowards to local subscribers of topic
-  """
-
   def handle_info({ref, ["subscribe", _, _]}, %{redo_ref: ref} = state) do
     {:noreply, state}
   end
