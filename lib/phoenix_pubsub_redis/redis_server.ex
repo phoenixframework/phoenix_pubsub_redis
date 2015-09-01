@@ -53,6 +53,7 @@ defmodule Phoenix.PubSub.RedisServer do
               redo_pid: nil,
               redo_ref: nil,
               status: :disconnected,
+              reconnect_timer: nil,
               opts: opts}
 
     {:ok, establish_conn(state)}
@@ -76,11 +77,14 @@ defmodule Phoenix.PubSub.RedisServer do
 
   def handle_info({ref, :closed}, %{redo_ref: ref} = state) do
     :ok = :redo.shutdown(state.redo_pid)
-    establish_failed(state)
+    {:noreply, establish_failed(state)}
   end
 
   def handle_info({:EXIT, redo_pid, _}, %{redo_pid: redo_pid} = state) do
-    establish_failed(state)
+    {:noreply, establish_failed(state)}
+  end
+  def handle_info({:EXIT, _, {:error, :econnrefused}}, state) do
+    {:noreply, establish_failed(state)}
   end
 
   @doc """
@@ -93,7 +97,7 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   def terminate(_reason, %{status: :disconnected}) do
-     :ok
+    :ok
   end
   def terminate(_reason, state) do
     :redo.shutdown(state.redo_pid)
@@ -102,14 +106,23 @@ defmodule Phoenix.PubSub.RedisServer do
 
   defp establish_failed(state) do
     Logger.error "unable to establish redis connection. Attempting to reconnect..."
-    :timer.send_after(@reconnect_after_ms, :establish_conn)
-    %{state | status: :disconnected}
+    %{state | redo_pid: nil,
+              redo_ref: nil,
+              reconnect_timer: schedule_reconnect(state),
+              status: :disconnected}
   end
   defp establish_success(redo_pid, state) do
     ref = :redo.subscribe(redo_pid, state.namespace)
     %{state | redo_pid: redo_pid,
               redo_ref: ref,
               status: :connected}
+  end
+
+  defp schedule_reconnect(state) do
+    if state.reconnect_timer, do: :timer.cancel(state.reconnect_timer)
+    {:ok, timer} = :timer.send_after(@reconnect_after_ms, :establish_conn)
+
+    timer
   end
 
   def establish_conn(state) do
