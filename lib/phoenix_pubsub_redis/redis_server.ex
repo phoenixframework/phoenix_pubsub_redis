@@ -45,16 +45,17 @@ defmodule Phoenix.PubSub.RedisServer do
   """
   def init(opts) do
     Process.flag(:trap_exit, true)
-    send(self, :establish_conn)
 
-    {:ok, %{local_name: Keyword.fetch!(opts, :local_name),
-            pool_name: Keyword.fetch!(opts, :pool_name),
-            namespace: Keyword.fetch!(opts, :namespace),
-            node_ref: Keyword.fetch!(opts, :node_ref),
-            redo_pid: nil,
-            redo_ref: nil,
-            status: :disconnected,
-            opts: opts}}
+    state = %{local_name: Keyword.fetch!(opts, :local_name),
+              pool_name: Keyword.fetch!(opts, :pool_name),
+              namespace: Keyword.fetch!(opts, :namespace),
+              node_ref: Keyword.fetch!(opts, :node_ref),
+              redo_pid: nil,
+              redo_ref: nil,
+              status: :disconnected,
+              opts: opts}
+
+    {:ok, establish_conn(state)}
   end
 
   def handle_info({ref, ["subscribe", _, _]}, %{redo_ref: ref} = state) do
@@ -88,10 +89,7 @@ defmodule Phoenix.PubSub.RedisServer do
   On init, an initial conection to redis is attempted when starting `:redo`
   """
   def handle_info(:establish_conn, state) do
-    case :redo.start_link(:undefined, state.opts) do
-      {:ok, redo_pid} -> establish_success(redo_pid, state)
-      _error          -> establish_failed(state)
-    end
+    {:noreply, establish_conn(state)}
   end
 
   def terminate(_reason, %{status: :disconnected}) do
@@ -105,12 +103,20 @@ defmodule Phoenix.PubSub.RedisServer do
   defp establish_failed(state) do
     Logger.error "unable to establish redis connection. Attempting to reconnect..."
     :timer.send_after(@reconnect_after_ms, :establish_conn)
-    {:noreply, %{state | status: :disconnected}}
+    %{state | status: :disconnected}
   end
   defp establish_success(redo_pid, state) do
     ref = :redo.subscribe(redo_pid, state.namespace)
-    {:noreply, %{state | redo_pid: redo_pid,
-                         redo_ref: ref,
-                         status: :connected}}
+    %{state | redo_pid: redo_pid,
+              redo_ref: ref,
+              status: :connected}
   end
+
+  def establish_conn(state) do
+    case :redo.start_link(:undefined, state.opts) do
+      {:ok, redo_pid} -> establish_success(redo_pid, state)
+      _error          -> establish_failed(state)
+    end
+  end
+
 end

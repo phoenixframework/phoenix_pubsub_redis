@@ -81,9 +81,9 @@ defmodule Phoenix.PubSub.Redis do
     true = :ets.insert(server_name, {:unsubscribe, Phoenix.PubSub.Local, [local_name]})
 
     children = [
-      worker(Phoenix.PubSub.Local, [local_name]),
       :poolboy.child_spec(pool_name, pool_opts, [opts]),
       worker(Phoenix.PubSub.RedisServer, [server_opts]),
+      worker(Phoenix.PubSub.Local, [local_name]),
     ]
     supervise children, strategy: :one_for_all
   end
