@@ -25,6 +25,7 @@ defmodule Phoenix.PubSub.Redis do
 
   ## Options
 
+    * `:url` - The url to the redis server ie: `redis://username:password@host:port`
     * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
@@ -43,6 +44,12 @@ defmodule Phoenix.PubSub.Redis do
 
   @doc false
   def init([server_name, opts]) do
+    if opts[:url] do
+      info = URI.parse(opts[:url])
+      destructure [username, password], String.split(info.userinfo, ":")
+      opts = Keyword.merge(opts, password: password, username: username, host: info.host, port: info.port)
+    end
+
     opts = Keyword.merge(@defaults, opts)
     opts = Keyword.merge(opts, host: String.to_char_list(opts[:host]))
     if pass = opts[:password] do
