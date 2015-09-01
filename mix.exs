@@ -1,7 +1,7 @@
 defmodule PhoenixPubsubRedis.Mixfile do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.2.1"
 
   def project do
     [app: :phoenix_pubsub_redis,
@@ -22,7 +22,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
   end
 
   defp deps do
-    [{:phoenix, "~> 0.15"},
+    [{:phoenix, "~> 1.0.0"},
      {:redo, "~> 2.0.1"},
      {:ex_doc, "~> 0.7.1", only: :docs},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
