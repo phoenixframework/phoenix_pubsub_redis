@@ -25,6 +25,7 @@ Config Options
 Option       | Description                                                            | Default        |
 :----------- | :--------------------------------------------------------------------- | :------------- |
 `:name`      | The required name to register the PubSub processes, ie: `MyApp.PubSub` |                |
+`:url`       | The redis-server URL, ie: `redis://username:password@host:port`        |                |
 `:host`      | The redis-server host IP                                               | `"127.0.0.1"`  |
 `:port`      | The redis-server port                                                  | `6379`         |
 `:password`  | The redis-server password                                              | `""`           |
