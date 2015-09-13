@@ -15,7 +15,7 @@ defp deps do
 end
 
 # config/config.exs
-config :my_app, MyApp.Endpiont,
+config :my_app, MyApp.Endpoint,
   pubsub: [adapter: Phoenix.PubSub.Redis,
            host: "192.168.1.100"]
 ```
