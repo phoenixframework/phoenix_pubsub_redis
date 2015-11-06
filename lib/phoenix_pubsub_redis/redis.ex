@@ -30,10 +30,16 @@ defmodule Phoenix.PubSub.Redis do
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
     * `:password` - The redis-server password, defaults `""`
+    * `:redis_pool_size` - The size of hte redis connection pool. Defaults `5`
+    * `:pool_size` - Both the size of the local pubsub server pool and subscriber
+      shard size. Defaults `1`. A single pool is often enough for most use-cases,
+      but for high subscriber counts on a single topic or greater than 1M
+      clients, a pool size equal to the number of schedulers (cores) is a well
+      rounded size.
 
   """
 
-  @pool_size 5
+  @redis_pool_size 5
   @defaults [host: "127.0.0.1", port: 6379]
 
 
@@ -44,6 +50,7 @@ defmodule Phoenix.PubSub.Redis do
 
   @doc false
   def init([server_name, opts]) do
+    pool_size = Keyword.fetch!(opts, :pool_size)
     if opts[:url] do
       info = URI.parse(opts[:url])
       destructure [username, password], String.split(info.userinfo, ":")
@@ -57,35 +64,30 @@ defmodule Phoenix.PubSub.Redis do
     end
 
     pool_name   = Module.concat(server_name, Pool)
-    local_name  = Module.concat(server_name, Local)
     namespace   = redis_namespace(server_name)
     node_ref    = :crypto.strong_rand_bytes(24)
     server_opts = Keyword.merge(opts, name: server_name,
-                                      local_name: local_name,
+                                      server_name: server_name,
                                       pool_name: pool_name,
                                       namespace: namespace,
                                       node_ref: node_ref)
     pool_opts = [
       name: {:local, pool_name},
       worker_module: Phoenix.PubSub.RedisConn,
-      size: opts[:pool_size] || @pool_size,
+      size: opts[:redis_pool_size] || @redis_pool_size,
       max_overflow: 0
     ]
 
-    # Define a dispatch table so we don't have to go through
-    # a bottleneck to get the instruction to perform.
-    :ets.new(server_name, [:set, :named_table, read_concurrency: true])
-    true = :ets.insert(server_name, {:broadcast, Phoenix.PubSub.RedisServer,
-                                    [pool_name, namespace, node_ref]})
-    true = :ets.insert(server_name, {:subscribe, Phoenix.PubSub.Local, [local_name]})
-    true = :ets.insert(server_name, {:unsubscribe, Phoenix.PubSub.Local, [local_name]})
+    dispatch_rules = [{:broadcast, Phoenix.PubSub.RedisServer,
+                                   [pool_name, pool_size, namespace, node_ref]}]
 
     children = [
-      :poolboy.child_spec(pool_name, pool_opts, [opts]),
+      supervisor(Phoenix.PubSub.LocalSupervisor, [server_name, pool_size, dispatch_rules]),
       worker(Phoenix.PubSub.RedisServer, [server_opts]),
-      worker(Phoenix.PubSub.Local, [local_name]),
+      :poolboy.child_spec(pool_name, pool_opts, [opts]),
     ]
-    supervise children, strategy: :one_for_all
+
+    supervise children, strategy: :rest_for_one
   end
 
   defp redis_namespace(server_name), do: "phx:#{server_name}"

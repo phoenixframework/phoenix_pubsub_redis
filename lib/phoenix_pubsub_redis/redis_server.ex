@@ -19,8 +19,8 @@ defmodule Phoenix.PubSub.RedisServer do
   Broadcasts message to redis. To be only called from {:perform, {m, f, a}}
   response to clients
   """
-  def broadcast(pool_name, namespace, node_ref, from_pid, topic, msg) do
-    redis_msg = {@redis_msg_vsn, node_ref, from_pid, topic, msg}
+  def broadcast(pool_name, pool_size, namespace, node_ref, from_pid, topic, msg) do
+    redis_msg = {@redis_msg_vsn, node_ref, pool_size, from_pid, topic, msg}
     bin_msg   = :erlang.term_to_binary(redis_msg)
 
     :poolboy.transaction pool_name, fn worker_pid ->
@@ -46,7 +46,7 @@ defmodule Phoenix.PubSub.RedisServer do
   def init(opts) do
     Process.flag(:trap_exit, true)
 
-    state = %{local_name: Keyword.fetch!(opts, :local_name),
+    state = %{server_name: Keyword.fetch!(opts, :server_name),
               pool_name: Keyword.fetch!(opts, :pool_name),
               namespace: Keyword.fetch!(opts, :namespace),
               node_ref: Keyword.fetch!(opts, :node_ref),
@@ -64,12 +64,12 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   def handle_info({ref, ["message", _redis_topic, bin_msg]}, %{redo_ref: ref} = state) do
-    {_vsn, remote_node_ref, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
+    {_vsn, remote_node_ref, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
 
     if remote_node_ref == state.node_ref do
-      Local.broadcast(state.local_name, from_pid, topic, msg)
+      Local.broadcast(state.server_name, pool_size, from_pid, topic, msg)
     else
-      Local.broadcast(state.local_name, :none, topic, msg)
+      Local.broadcast(state.server_name, pool_size, :none, topic, msg)
     end
 
     {:noreply, state}
@@ -79,12 +79,18 @@ defmodule Phoenix.PubSub.RedisServer do
     :ok = :redo.shutdown(state.redo_pid)
     {:noreply, establish_failed(state)}
   end
+  def handle_info({_ref, :closed}, state) do
+    {:noreply, state}
+  end
 
   def handle_info({:EXIT, redo_pid, _}, %{redo_pid: redo_pid} = state) do
     {:noreply, establish_failed(state)}
   end
   def handle_info({:EXIT, _, {:error, :econnrefused}}, state) do
     {:noreply, establish_failed(state)}
+  end
+  def handle_info({:EXIT, _, _reason}, state) do
+    {:noreply, state}
   end
 
   @doc """
@@ -93,7 +99,7 @@ defmodule Phoenix.PubSub.RedisServer do
   On init, an initial conection to redis is attempted when starting `:redo`
   """
   def handle_info(:establish_conn, state) do
-    {:noreply, establish_conn(state)}
+    {:noreply, establish_conn(%{state | reconnect_timer: nil})}
   end
 
   def terminate(_reason, %{status: :disconnected}) do
@@ -104,6 +110,9 @@ defmodule Phoenix.PubSub.RedisServer do
     :ok
   end
 
+  defp establish_failed(%{reconnect_timer: t} = state) when not is_nil(t) do
+    state
+  end
   defp establish_failed(state) do
     Logger.error "unable to establish redis connection. Attempting to reconnect..."
     %{state | redo_pid: nil,
