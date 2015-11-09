@@ -53,8 +53,17 @@ defmodule Phoenix.PubSub.Redis do
     pool_size = Keyword.fetch!(opts, :pool_size)
     if opts[:url] do
       info = URI.parse(opts[:url])
-      destructure [username, password], String.split(info.userinfo, ":")
-      opts = Keyword.merge(opts, password: password, username: username, host: info.host, port: info.port)
+      user_opts =
+        case String.split(info.userinfo || "", ":") do
+          [""]                 -> []
+          [username]           -> [username: username]
+          [username, password] -> [username: username, password: password]
+        end
+
+      opts =
+        opts
+        |> Keyword.merge(user_opts)
+        |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
     end
 
     opts = Keyword.merge(@defaults, opts)
