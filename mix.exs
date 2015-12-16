@@ -29,7 +29,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
   end
 
   defp package do
-    [contributors: ["Chris McCord"],
+    [maintainers: ["Chris McCord"],
      licenses: ["MIT"],
      links: %{github: "https://github.com/phoenixframework/phoenix_pubsub_redis"}]
   end
