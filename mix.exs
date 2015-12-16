@@ -1,7 +1,7 @@
 defmodule PhoenixPubsubRedis.Mixfile do
   use Mix.Project
 
-  @version "1.0.0"
+  @version "2.0.0"
 
   def project do
     [app: :phoenix_pubsub_redis,
@@ -22,10 +22,9 @@ defmodule PhoenixPubsubRedis.Mixfile do
   end
 
   defp deps do
-    # TODO bump to phoenix 1.1 on release
     [{:phoenix, github: "phoenixframework/phoenix"},
      {:redo, "~> 2.0.1"},
-     {:ex_doc, "~> 0.7.1", only: :docs},
+     {:ex_doc, "~> 0.11.1", only: :docs},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
   end
 
