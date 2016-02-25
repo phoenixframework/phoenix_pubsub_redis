@@ -67,10 +67,7 @@ defmodule Phoenix.PubSub.Redis do
     end
 
     opts = Keyword.merge(@defaults, opts)
-    opts = Keyword.merge(opts, host: String.to_char_list(opts[:host]))
-    if pass = opts[:password] do
-      opts = Keyword.put(opts, :pass, String.to_char_list(pass))
-    end
+    redis_opts = Keyword.take(opts, [:host, :port, :password, :database])
 
     pool_name   = Module.concat(server_name, Pool)
     namespace   = redis_namespace(server_name)
@@ -82,7 +79,7 @@ defmodule Phoenix.PubSub.Redis do
                                       node_ref: node_ref)
     pool_opts = [
       name: {:local, pool_name},
-      worker_module: Phoenix.PubSub.RedisConn,
+      worker_module: Redix,
       size: opts[:redis_pool_size] || @redis_pool_size,
       max_overflow: 0
     ]
@@ -93,7 +90,7 @@ defmodule Phoenix.PubSub.Redis do
     children = [
       supervisor(Phoenix.PubSub.LocalSupervisor, [server_name, pool_size, dispatch_rules]),
       worker(Phoenix.PubSub.RedisServer, [server_opts]),
-      :poolboy.child_spec(pool_name, pool_opts, [opts]),
+      :poolboy.child_spec(pool_name, pool_opts, redis_opts),
     ]
 
     supervise children, strategy: :rest_for_one
