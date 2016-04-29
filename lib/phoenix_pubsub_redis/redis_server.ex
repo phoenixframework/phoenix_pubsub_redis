@@ -69,12 +69,16 @@ defmodule Phoenix.PubSub.RedisServer do
     {:noreply, state}
   end
 
-  def handle_info({:redix_pubsub, :disconnected, :tcp_closed, [channel: _channel]}, state) do
+  def handle_info({:redix_pubsub, :disconnected, :tcp_closed, something}, state) do
     {:noreply, establish_failed(state)}
   end
 
   def handle_info({:redix_pubsub, :reconnected, _, _}, state) do
     {:noreply, establish_success(state)}
+  end
+
+  def handle_info(:establish_conn, state) do
+    {:noreply, establish_conn(%{state | reconnect_timer: nil})}
   end
 
   def handle_info({:EXIT, redix_pid, _}, %{redix_pid: redix_pid} = state) do
@@ -95,18 +99,30 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   defp establish_failed(state) do
-    %{state | status: :disconnected}
+    Logger.error "unable to establish initial redis connection. Attempting to reconnect..."
+    %{state | redix_pid: nil,
+              reconnect_timer: schedule_reconnect(state),
+              status: :disconnected}
+  end
+
+  defp schedule_reconnect(state) do
+    if state.reconnect_timer, do: :timer.cancel(state.reconnect_timer)
+    {:ok, timer} = :timer.send_after(@reconnect_after_ms, :establish_conn)
+
+    timer
   end
 
   defp establish_success(%{redix_pid: redix_pid} = state) do
-    Redix.PubSub.subscribe(redix_pid, state.namespace, self())
+    :ok = Redix.PubSub.subscribe(redix_pid, state.namespace, self())
     %{state | status: :connected}
   end
 
   defp establish_conn(state) do
     redis_opts = Keyword.take(state.opts, @redix_opts)
-    case Redix.PubSub.start_link(redis_opts) do
+    case Redix.PubSub.start_link(redis_opts, [sync_connect: true]) do
       {:ok, redix_pid} -> establish_success(%{state | redix_pid: redix_pid})
+      {:error, _} ->
+        establish_failed(state)
     end
   end
 end
