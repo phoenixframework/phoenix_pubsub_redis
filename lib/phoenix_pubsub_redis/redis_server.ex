@@ -53,6 +53,10 @@ defmodule Phoenix.PubSub.RedisServer do
     {:ok, establish_conn(state)}
   end
 
+  def handle_info(:establish_conn, state) do
+    {:noreply, establish_conn(%{state | reconnect_timer: nil})}
+  end
+
   def handle_info({:redix_pubsub, :subscribe, _, _}, state) do
     {:noreply, state}
   end
@@ -67,18 +71,6 @@ defmodule Phoenix.PubSub.RedisServer do
     end
 
     {:noreply, state}
-  end
-
-  def handle_info({:redix_pubsub, :disconnected, :tcp_closed, something}, state) do
-    {:noreply, establish_failed(state)}
-  end
-
-  def handle_info({:redix_pubsub, :reconnected, _, _}, state) do
-    {:noreply, establish_success(state)}
-  end
-
-  def handle_info(:establish_conn, state) do
-    {:noreply, establish_conn(%{state | reconnect_timer: nil})}
   end
 
   def handle_info({:EXIT, redix_pid, _}, %{redix_pid: redix_pid} = state) do
