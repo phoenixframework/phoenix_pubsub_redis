@@ -4,4 +4,4 @@
   "plug": {:hex, :plug, "1.0.2"},
   "poison": {:hex, :poison, "1.5.0"},
   "poolboy": {:hex, :poolboy, "1.5.1"},
-  "redix": {:hex, :redix, "0.3.6"}}
+  "redix": {:git, "https://github.com/whatyouhide/redix.git", "a3606393fd866f3e71062211a6129ba47f75faf6", [branch: "master"]}}

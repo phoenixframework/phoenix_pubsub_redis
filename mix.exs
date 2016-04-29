@@ -23,7 +23,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
 
   defp deps do
     [{:phoenix, "~> 1.1"},
-     {:redix, "~> 0.3.6"},
+     {:redix, github: "whatyouhide/redix", branch: "master"},
      {:ex_doc, "~> 0.11.1", only: :docs},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
   end
