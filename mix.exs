@@ -18,7 +18,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :poolboy]]
+    [applications: [:logger, :poolboy, :redix]]
   end
 
   defp deps do

@@ -26,8 +26,8 @@ defmodule Phoenix.PubSub.RedisServer do
 
     :poolboy.transaction pool_name, fn worker_pid ->
       case Redix.command(worker_pid, ["PUBLISH", namespace, bin_msg]) do
+        {:ok, _} -> :ok
         {:error, reason} -> {:error, reason}
-        _ -> :ok
       end
     end
   end
@@ -111,7 +111,7 @@ defmodule Phoenix.PubSub.RedisServer do
 
   defp establish_conn(state) do
     redis_opts = Keyword.take(state.opts, @redix_opts)
-    case Redix.PubSub.start_link(redis_opts, [sync_connect: true]) do
+    case Redix.PubSub.start_link(redis_opts, sync_connect: true) do
       {:ok, redix_pid} -> establish_success(%{state | redix_pid: redix_pid})
       {:error, _} ->
         establish_failed(state)
