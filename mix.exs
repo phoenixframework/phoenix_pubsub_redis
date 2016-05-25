@@ -18,12 +18,13 @@ defmodule PhoenixPubsubRedis.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :poolboy, :redix]]
+    [applications: [:logger, :poolboy, :redix, :redix_pubsub]]
   end
 
   defp deps do
     [{:phoenix, "~> 1.1"},
-     {:redix, github: "whatyouhide/redix", branch: "master"},
+     {:redix, github: "whatyouhide/redix", branch: "master", override: true},
+     {:redix_pubsub, github: "whatyouhide/redix_pubsub", branch: "master"},
      {:ex_doc, "~> 0.11.1", only: :docs},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
   end
