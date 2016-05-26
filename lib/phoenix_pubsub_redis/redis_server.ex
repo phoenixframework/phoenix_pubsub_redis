@@ -57,11 +57,11 @@ defmodule Phoenix.PubSub.RedisServer do
     {:noreply, establish_conn(%{state | reconnect_timer: nil})}
   end
 
-  def handle_info({:redix_pubsub, _, :subscribed, _}, state) do
+  def handle_info({:redix_pubsub, redix_pid, :subscribed, _}, %{redix_pid: redix_pid} = state) do
     {:noreply, state}
   end
 
-  def handle_info({:redix_pubsub, _, :message, %{payload: bin_msg}}, state) do
+  def handle_info({:redix_pubsub, redix_pid, :message, %{payload: bin_msg}}, %{redix_pid: redix_pid} = state) do
     {_vsn, remote_node_ref, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
 
     if remote_node_ref == state.node_ref do
