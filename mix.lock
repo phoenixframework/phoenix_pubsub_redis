@@ -1,6 +1,5 @@
-%{"ex_doc": {:hex, :ex_doc, "0.11.1"},
-  "phoenix": {:git, "https://github.com/phoenixframework/phoenix.git", "db69b2c3c8c87f41541d3c8e8f3cbf6300fec03c", []},
-  "plug": {:hex, :plug, "1.0.2"},
+%{"ex_doc": {:hex, :ex_doc, "0.11.1", "43a16e4168e384213a052e6ee77723b765165b866ac52a10394dfa8f7de5b203", [:mix], [{:earmark, "~> 0.1.17 or ~> 0.2", [hex: :earmark, optional: true]}]},
+  "phoenix_pubsub": {:hex, :phoenix_pubsub, "1.0.0", "c31af4be22afeeebfaf246592778c8c840e5a1ddc7ca87610c41ccfb160c2c57", [:mix], []},
   "poison": {:hex, :poison, "1.5.0"},
-  "poolboy": {:hex, :poolboy, "1.5.1"},
-  "redo": {:hex, :redo, "2.0.1"}}
+  "poolboy": {:hex, :poolboy, "1.5.1", "6b46163901cfd0a1b43d692657ed9d7e599853b3b21b95ae5ae0a777cf9b6ca8", [:rebar], []},
+  "redo": {:hex, :redo, "2.0.1", "b895c67f4c1266db8fecca0079fbab65bdfaf7c2f5618c8edbdbf4800e7e248b", [:rebar], []}}
