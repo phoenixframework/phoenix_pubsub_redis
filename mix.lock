@@ -1,8 +1,8 @@
-%{"connection": {:hex, :connection, "1.0.2", "f4a06dd3ecae4141aa66f94ce92ea4c4b8753069472814932f1cadbc3078ab80", [:mix], []},
+%{"connection": {:hex, :connection, "1.0.3", "3145f7416be3df248a4935f24e3221dc467c1e3a158d62015b35bd54da365786", [:mix], []},
   "ex_doc": {:hex, :ex_doc, "0.11.1", "43a16e4168e384213a052e6ee77723b765165b866ac52a10394dfa8f7de5b203", [:mix], [{:earmark, "~> 0.1.17 or ~> 0.2", [hex: :earmark, optional: true]}]},
   "phoenix": {:hex, :phoenix, "1.1.4", "65809fba92eb94377372a5fb5a561197654bb8406e773cc47ca1a031bbe58019", [:mix], [{:poison, "~> 1.5 or ~> 2.0", [hex: :poison, optional: false]}, {:plug, "~> 1.0", [hex: :plug, optional: false]}, {:cowboy, "~> 1.0", [hex: :cowboy, optional: true]}]},
   "plug": {:hex, :plug, "1.0.2", "cc341ac229c88fc6b04d1771f62f675640f24cea97a6313a49ffcaa8236e949e", [:mix], [{:cowboy, "~> 1.0", [hex: :cowboy, optional: true]}]},
   "poison": {:hex, :poison, "1.5.0", "f2f4f460623a6f154683abae34352525e1d918380267cdbd949a07ba57503248", [:mix], []},
   "poolboy": {:hex, :poolboy, "1.5.1", "6b46163901cfd0a1b43d692657ed9d7e599853b3b21b95ae5ae0a777cf9b6ca8", [:rebar], []},
-  "redix": {:git, "https://github.com/whatyouhide/redix.git", "c9d9215345694c2e611d3730f15035cf765af42e", [branch: "master"]},
-  "redix_pubsub": {:git, "https://github.com/whatyouhide/redix_pubsub.git", "fab4b58bb12372ec279980a54a4f968880208ec2", [branch: "master"]}}
+  "redix": {:hex, :redix, "0.4.0", "c8cfad755252e5441c4119437ba3a8989518af7aa90dbd6f4ff7207b72e4a967", [:mix], [{:connection, "~> 1.0.0", [hex: :connection, optional: false]}]},
+  "redix_pubsub": {:hex, :redix_pubsub, "0.1.0", "b408913bf2287ed8749b6f2abe8d7cecdcd6cb4dbd9635ecc444c183100bed00", [:mix], [{:redix, "~> 0.4.0", [hex: :redix, optional: false]}, {:connection, "~> 1.0", [hex: :connection, optional: false]}]}}
