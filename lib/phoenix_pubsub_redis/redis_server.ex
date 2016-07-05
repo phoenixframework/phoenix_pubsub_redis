@@ -7,6 +7,7 @@ defmodule Phoenix.PubSub.RedisServer do
 
   @reconnect_after_ms 5_000
   @redis_msg_vsn 1
+  @redix_opts [:host, :port, :password, :database]
 
   @doc """
   Starts the server
@@ -24,13 +25,8 @@ defmodule Phoenix.PubSub.RedisServer do
     bin_msg   = :erlang.term_to_binary(redis_msg)
 
     :poolboy.transaction pool_name, fn worker_pid ->
-      case GenServer.call(worker_pid, :conn) do
-        {:ok, conn_pid} ->
-          case :redo.cmd(conn_pid, ["PUBLISH", namespace, bin_msg]) do
-            {:error, reason} -> {:error, reason}
-            _ -> :ok
-          end
-
+      case Redix.command(worker_pid, ["PUBLISH", namespace, bin_msg]) do
+        {:ok, _} -> :ok
         {:error, reason} -> {:error, reason}
       end
     end
@@ -39,19 +35,17 @@ defmodule Phoenix.PubSub.RedisServer do
   @doc """
   Initializes the server.
 
-  An initial connection establishment loop is entered. Once `:redo`
+  An initial connection establishment loop is entered. Once `:redix`
   is started successfully, it handles reconnections automatically, so we
   pass off reconnection handling once we find an initial connection.
   """
   def init(opts) do
     Process.flag(:trap_exit, true)
-
     state = %{server_name: Keyword.fetch!(opts, :server_name),
               pool_name: Keyword.fetch!(opts, :pool_name),
               namespace: Keyword.fetch!(opts, :namespace),
               node_ref: Keyword.fetch!(opts, :node_ref),
-              redo_pid: nil,
-              redo_ref: nil,
+              redix_pid: nil,
               status: :disconnected,
               reconnect_timer: nil,
               opts: opts}
@@ -59,36 +53,30 @@ defmodule Phoenix.PubSub.RedisServer do
     {:ok, establish_conn(state)}
   end
 
-  def handle_info({ref, ["subscribe", _, _]}, %{redo_ref: ref} = state) do
+  def handle_info(:establish_conn, state) do
+    {:noreply, establish_conn(%{state | reconnect_timer: nil})}
+  end
+
+  def handle_info({:redix_pubsub, redix_pid, :subscribed, _}, %{redix_pid: redix_pid} = state) do
     {:noreply, state}
   end
 
-  def handle_info({ref, ["message", _redis_topic, bin_msg]}, %{redo_ref: ref} = state) do
+  def handle_info({:redix_pubsub, redix_pid, :message, %{payload: bin_msg}}, %{redix_pid: redix_pid} = state) do
     {_vsn, remote_node_ref, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
 
     if remote_node_ref == state.node_ref do
-      Local.broadcast(state.server_name, pool_size, from_pid, topic, msg)
+      Local.broadcast(nil, state.server_name, pool_size, from_pid, topic, msg)
     else
-      Local.broadcast(state.server_name, pool_size, :none, topic, msg)
+      Local.broadcast(nil, state.server_name, pool_size, :none, topic, msg)
     end
 
     {:noreply, state}
   end
 
-  def handle_info({ref, :closed}, %{redo_ref: ref} = state) do
-    :ok = :redo.shutdown(state.redo_pid)
-    {:noreply, establish_failed(state)}
-  end
-  def handle_info({_ref, :closed}, state) do
-    {:noreply, state}
+  def handle_info({:EXIT, redix_pid, _}, %{redix_pid: redix_pid} = state) do
+    {:noreply, establish_conn(state)}
   end
 
-  def handle_info({:EXIT, redo_pid, _}, %{redo_pid: redo_pid} = state) do
-    {:noreply, establish_failed(state)}
-  end
-  def handle_info({:EXIT, _, {:error, :econnrefused}}, state) do
-    {:noreply, establish_failed(state)}
-  end
   def handle_info({:EXIT, _, _reason}, state) do
     {:noreply, state}
   end
@@ -96,35 +84,17 @@ defmodule Phoenix.PubSub.RedisServer do
   @doc """
   Connection establishment and shutdown loop
 
-  On init, an initial conection to redis is attempted when starting `:redo`
+  On init, an initial conection to redis is attempted when starting `:redix`
   """
-  def handle_info(:establish_conn, state) do
-    {:noreply, establish_conn(%{state | reconnect_timer: nil})}
-  end
-
-  def terminate(_reason, %{status: :disconnected}) do
-    :ok
-  end
-  def terminate(_reason, state) do
-    :redo.shutdown(state.redo_pid)
+  def terminate(_reason, _state) do
     :ok
   end
 
-  defp establish_failed(%{reconnect_timer: t} = state) when not is_nil(t) do
-    state
-  end
   defp establish_failed(state) do
-    Logger.error "unable to establish redis connection. Attempting to reconnect..."
-    %{state | redo_pid: nil,
-              redo_ref: nil,
+    Logger.error "unable to establish initial redis connection. Attempting to reconnect..."
+    %{state | redix_pid: nil,
               reconnect_timer: schedule_reconnect(state),
               status: :disconnected}
-  end
-  defp establish_success(redo_pid, state) do
-    ref = :redo.subscribe(redo_pid, state.namespace)
-    %{state | redo_pid: redo_pid,
-              redo_ref: ref,
-              status: :connected}
   end
 
   defp schedule_reconnect(state) do
@@ -134,11 +104,17 @@ defmodule Phoenix.PubSub.RedisServer do
     timer
   end
 
-  def establish_conn(state) do
-    case :redo.start_link(:undefined, state.opts) do
-      {:ok, redo_pid} -> establish_success(redo_pid, state)
-      _error          -> establish_failed(state)
-    end
+  defp establish_success(%{redix_pid: redix_pid} = state) do
+    :ok = Redix.PubSub.subscribe(redix_pid, state.namespace, self())
+    %{state | status: :connected}
   end
 
+  defp establish_conn(state) do
+    redis_opts = Keyword.take(state.opts, @redix_opts)
+    case Redix.PubSub.start_link(redis_opts, sync_connect: true) do
+      {:ok, redix_pid} -> establish_success(%{state | redix_pid: redix_pid})
+      {:error, _} ->
+        establish_failed(state)
+    end
+  end
 end

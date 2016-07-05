@@ -51,30 +51,15 @@ defmodule Phoenix.PubSub.Redis do
   @doc false
   def init([server_name, opts]) do
     pool_size = Keyword.fetch!(opts, :pool_size)
-    if opts[:url] do
-      info = URI.parse(opts[:url])
-      user_opts =
-        case String.split(info.userinfo || "", ":") do
-          [""]                 -> []
-          [username]           -> [username: username]
-          [username, password] -> [username: username, password: password]
-        end
 
-      opts =
-        opts
-        |> Keyword.merge(user_opts)
-        |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
-    end
-
-    opts = Keyword.merge(@defaults, opts)
-    opts = Keyword.merge(opts, host: String.to_char_list(opts[:host]))
-    if pass = opts[:password] do
-      opts = Keyword.put(opts, :pass, String.to_char_list(pass))
-    end
+    opts = handle_url_opts(opts)
+    |> Keyword.merge(@defaults, opts)
+    redis_opts = Keyword.take(opts, [:host, :port, :password, :database])
 
     pool_name   = Module.concat(server_name, Pool)
     namespace   = redis_namespace(server_name)
     node_ref    = :crypto.strong_rand_bytes(24)
+    node_name = opts[:node_name]
     server_opts = Keyword.merge(opts, name: server_name,
                                       server_name: server_name,
                                       pool_name: pool_name,
@@ -82,22 +67,48 @@ defmodule Phoenix.PubSub.Redis do
                                       node_ref: node_ref)
     pool_opts = [
       name: {:local, pool_name},
-      worker_module: Phoenix.PubSub.RedisConn,
+      worker_module: Redix,
       size: opts[:redis_pool_size] || @redis_pool_size,
       max_overflow: 0
     ]
 
-    dispatch_rules = [{:broadcast, Phoenix.PubSub.RedisServer,
-                                   [pool_name, pool_size, namespace, node_ref]}]
+    dispatch_rules = [{:broadcast, Phoenix.PubSub.RedisServer, [pool_name, pool_size, namespace, node_ref]},
+                      {:node_name, __MODULE__, [node_name]}]
 
     children = [
       supervisor(Phoenix.PubSub.LocalSupervisor, [server_name, pool_size, dispatch_rules]),
       worker(Phoenix.PubSub.RedisServer, [server_opts]),
-      :poolboy.child_spec(pool_name, pool_opts, [opts]),
+      :poolboy.child_spec(pool_name, pool_opts, redis_opts),
     ]
 
     supervise children, strategy: :rest_for_one
   end
 
   defp redis_namespace(server_name), do: "phx:#{server_name}"
+
+  defp handle_url_opts(opts) do
+    if opts[:url] do
+      do_handle_url_opts(opts)
+    else
+      opts
+    end
+  end
+
+  defp do_handle_url_opts(opts) do
+    info = URI.parse(opts[:url])
+    user_opts =
+      case String.split(info.userinfo || "", ":") do
+        [""]                 -> []
+        [username]           -> [username: username]
+        [username, password] -> [username: username, password: password]
+      end
+
+    opts
+    |> Keyword.merge(user_opts)
+    |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
+  end
+
+  @doc false
+  def node_name(nil), do: node()
+  def node_name(configured_name), do: configured_name
 end
