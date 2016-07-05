@@ -1,7 +1,7 @@
 defmodule PhoenixPubsubRedis.Mixfile do
   use Mix.Project
 
-  @version "2.0.0"
+  @version "2.1.0"
 
   def project do
     [app: :phoenix_pubsub_redis,
@@ -9,8 +9,8 @@ defmodule PhoenixPubsubRedis.Mixfile do
      elixir: "~> 1.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     package: package,
-     deps: deps,
+     package: package(),
+     deps: deps(),
      source_url: "https://github.com/phoenixframework/phoenix_pubsub_redis",
      description: """
      The Redis PubSub adapter for the Phoenix framework
