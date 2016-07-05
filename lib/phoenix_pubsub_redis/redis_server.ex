@@ -65,9 +65,9 @@ defmodule Phoenix.PubSub.RedisServer do
     {_vsn, remote_node_ref, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
 
     if remote_node_ref == state.node_ref do
-      Local.broadcast(state.server_name, pool_size, from_pid, topic, msg)
+      Local.broadcast(nil, state.server_name, pool_size, from_pid, topic, msg)
     else
-      Local.broadcast(state.server_name, pool_size, :none, topic, msg)
+      Local.broadcast(nil, state.server_name, pool_size, :none, topic, msg)
     end
 
     {:noreply, state}
