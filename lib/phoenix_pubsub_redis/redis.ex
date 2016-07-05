@@ -51,22 +51,9 @@ defmodule Phoenix.PubSub.Redis do
   @doc false
   def init([server_name, opts]) do
     pool_size = Keyword.fetch!(opts, :pool_size)
-    if opts[:url] do
-      info = URI.parse(opts[:url])
-      user_opts =
-        case String.split(info.userinfo || "", ":") do
-          [""]                 -> []
-          [username]           -> [username: username]
-          [username, password] -> [username: username, password: password]
-        end
 
-      opts =
-        opts
-        |> Keyword.merge(user_opts)
-        |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
-    end
-
-    opts = Keyword.merge(@defaults, opts)
+    opts = handle_url_opts(opts)
+    |> Keyword.merge(@defaults, opts)
     redis_opts = Keyword.take(opts, [:host, :port, :password, :database])
 
     pool_name   = Module.concat(server_name, Pool)
@@ -98,6 +85,28 @@ defmodule Phoenix.PubSub.Redis do
   end
 
   defp redis_namespace(server_name), do: "phx:#{server_name}"
+
+  defp handle_url_opts(opts) do
+    if opts[:url] do
+      do_handle_url_opts(opts)
+    else
+      opts
+    end
+  end
+
+  defp do_handle_url_opts(opts) do
+    info = URI.parse(opts[:url])
+    user_opts =
+      case String.split(info.userinfo || "", ":") do
+        [""]                 -> []
+        [username]           -> [username: username]
+        [username, password] -> [username: username, password: password]
+      end
+
+    opts
+    |> Keyword.merge(user_opts)
+    |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
+  end
 
   @doc false
   def node_name(nil), do: node()
