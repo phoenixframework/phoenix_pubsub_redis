@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.1.1 (2016-7-7)
+
+* Bug fixes
+  * Fix bad use of Keyword.merge
+
 ## v2.1.0 (2016-7-5)
 
 * Enhancements
