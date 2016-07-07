@@ -16,12 +16,18 @@ defmodule Phoenix.PubSub.RedisServer do
     GenServer.start_link(__MODULE__, opts, name: Dict.fetch!(opts, :name))
   end
 
-  @doc """
-  Broadcasts message to redis. To be only called from {:perform, {m, f, a}}
-  response to clients
-  """
-  def broadcast(pool_name, pool_size, namespace, node_ref, from_pid, topic, msg) do
-    redis_msg = {@redis_msg_vsn, node_ref, pool_size, from_pid, topic, msg}
+  @doc false
+  def direct_broadcast(fastlane, pool_name, pool_size, namespace, node_ref, _node_name, from_pid, topic, msg) do
+    do_broadcast(fastlane, pool_name, pool_size, namespace, node_ref, from_pid, topic, msg)
+  end
+
+  @doc false
+  def broadcast(fastlane, pool_name, pool_size, namespace, node_ref, from_pid, topic, msg) do
+    do_broadcast(fastlane, pool_name, pool_size, namespace, node_ref, from_pid, topic, msg)
+  end
+
+  defp do_broadcast(fastlane, pool_name, pool_size, namespace, node_ref, from_pid, topic, msg) do
+    redis_msg = {@redis_msg_vsn, node_ref, fastlane, pool_size, from_pid, topic, msg}
     bin_msg   = :erlang.term_to_binary(redis_msg)
 
     :poolboy.transaction pool_name, fn worker_pid ->
@@ -62,12 +68,12 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   def handle_info({:redix_pubsub, redix_pid, :message, %{payload: bin_msg}}, %{redix_pid: redix_pid} = state) do
-    {_vsn, remote_node_ref, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
+    {_vsn, remote_node_ref, fastlane, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
 
     if remote_node_ref == state.node_ref do
-      Local.broadcast(nil, state.server_name, pool_size, from_pid, topic, msg)
+      Local.broadcast(fastlane, state.server_name, pool_size, from_pid, topic, msg)
     else
-      Local.broadcast(nil, state.server_name, pool_size, :none, topic, msg)
+      Local.broadcast(fastlane, state.server_name, pool_size, :none, topic, msg)
     end
 
     {:noreply, state}

@@ -59,7 +59,8 @@ defmodule Phoenix.PubSub.Redis do
     pool_name   = Module.concat(server_name, Pool)
     namespace   = redis_namespace(server_name)
     node_ref    = :crypto.strong_rand_bytes(24)
-    node_name = opts[:node_name]
+    node_name   = opts[:node_name]
+    fastlane    = opts[:fastlane]
     server_opts = Keyword.merge(opts, name: server_name,
                                       server_name: server_name,
                                       pool_name: pool_name,
@@ -72,7 +73,8 @@ defmodule Phoenix.PubSub.Redis do
       max_overflow: 0
     ]
 
-    dispatch_rules = [{:broadcast, Phoenix.PubSub.RedisServer, [pool_name, pool_size, namespace, node_ref]},
+    dispatch_rules = [{:broadcast, Phoenix.PubSub.RedisServer, [fastlane, pool_name, pool_size, namespace, node_ref]},
+                      {:direct_broadcast, Phoenix.PubSub.RedisServer, [fastlane, pool_name, pool_size, namespace, node_ref]},
                       {:node_name, __MODULE__, [node_name]}]
 
     children = [
