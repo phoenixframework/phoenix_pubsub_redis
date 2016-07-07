@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.2 (2016-7-7)
+
+* Bug fixes
+  * Fix fastlane options being discarded
+
+
 ## v2.1.1 (2016-7-7)
 
 * Bug fixes
