@@ -53,7 +53,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_size = Keyword.fetch!(opts, :pool_size)
 
     opts = handle_url_opts(opts)
-    |> Keyword.merge(@defaults, opts)
+    opts = Keyword.merge(@defaults, opts)
     redis_opts = Keyword.take(opts, [:host, :port, :password, :database])
 
     pool_name   = Module.concat(server_name, Pool)
