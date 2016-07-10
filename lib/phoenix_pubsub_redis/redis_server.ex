@@ -51,6 +51,7 @@ defmodule Phoenix.PubSub.RedisServer do
               pool_name: Keyword.fetch!(opts, :pool_name),
               namespace: Keyword.fetch!(opts, :namespace),
               node_ref: Keyword.fetch!(opts, :node_ref),
+              fastlane: Keyword.fetch!(opts, :fastlane),
               redix_pid: nil,
               status: :disconnected,
               reconnect_timer: nil,
@@ -69,11 +70,11 @@ defmodule Phoenix.PubSub.RedisServer do
 
   def handle_info({:redix_pubsub, redix_pid, :message, %{payload: bin_msg}}, %{redix_pid: redix_pid} = state) do
     {_vsn, remote_node_ref, fastlane, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
-
+    fetched_fastlane = fastlane || state.fastlane
     if remote_node_ref == state.node_ref do
-      Local.broadcast(fastlane, state.server_name, pool_size, from_pid, topic, msg)
+      Local.broadcast(fetched_fastlane, state.server_name, pool_size, from_pid, topic, msg)
     else
-      Local.broadcast(fastlane, state.server_name, pool_size, :none, topic, msg)
+      Local.broadcast(fetched_fastlane, state.server_name, pool_size, :none, topic, msg)
     end
 
     {:noreply, state}
