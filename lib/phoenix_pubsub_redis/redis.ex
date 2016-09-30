@@ -6,7 +6,7 @@ defmodule Phoenix.PubSub.Redis do
 
   To use Redis as your PubSub adapter, simply add it to your Endpoint's config:
 
-      config :my_app, MyApp.Endpiont,
+      config :my_app, MyApp.Endpoint,
         pubsub: [adapter: Phoenix.PubSub.Redis,
                  host: "192.168.1.100"]
 
