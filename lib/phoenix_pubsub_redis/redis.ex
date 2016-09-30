@@ -13,7 +13,7 @@ defmodule Phoenix.PubSub.Redis do
   You will also need to add `:phoenix_pubsub_redis` to your deps:
 
       defp deps do
-        [{:phoenix_pubsub_redis, "~> 1.0.0"}]
+        [{:phoenix_pubsub_redis, "~> 2.1.0"}]
       end
 
   And also add `:phoenix_pubsub_redis` to your list of applications:
