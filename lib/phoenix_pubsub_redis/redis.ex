@@ -31,7 +31,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
     * `:password` - The redis-server password, defaults `""`
-    * `:redis_pool_size` - The size of hte redis connection pool. Defaults `5`
+    * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
     * `:pool_size` - Both the size of the local pubsub server pool and subscriber
       shard size. Defaults `1`. A single pool is often enough for most use-cases,
       but for high subscriber counts on a single topic or greater than 1M
