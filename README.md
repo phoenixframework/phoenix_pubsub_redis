@@ -17,7 +17,7 @@ end
 # config/config.exs
 config :my_app, MyApp.Endpoint,
   pubsub: [adapter: Phoenix.PubSub.Redis,
-           host: "192.168.1.100"]
+           host: "192.168.1.100", node_name: System.get_env("NODE")]
 ```
 
 Config Options
@@ -25,6 +25,7 @@ Config Options
 Option       | Description                                                            | Default        |
 :----------- | :--------------------------------------------------------------------- | :------------- |
 `:name`      | The required name to register the PubSub processes, ie: `MyApp.PubSub` |                |
+`:node_name` | The required name of the node, ie: `System.get_env("NODE")`            |                |
 `:url`       | The redis-server URL, ie: `redis://username:password@host:port`        |                |
 `:host`      | The redis-server host IP                                               | `"127.0.0.1"`  |
 `:port`      | The redis-server port                                                  | `6379`         |

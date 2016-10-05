@@ -8,7 +8,7 @@ defmodule Phoenix.PubSub.Redis do
 
       config :my_app, MyApp.Endpoint,
         pubsub: [adapter: Phoenix.PubSub.Redis,
-                 host: "192.168.1.100"]
+                 host: "192.168.1.100", node_name: System.get_env("NODE")]
 
   You will also need to add `:phoenix_pubsub_redis` to your deps:
 
