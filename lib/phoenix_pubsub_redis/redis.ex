@@ -27,6 +27,7 @@ defmodule Phoenix.PubSub.Redis do
 
     * `:url` - The url to the redis server ie: `redis://username:password@host:port`
     * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
+    * `:node_name` - The required name of the node, ie: `System.get_env("NODE")`
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
     * `:password` - The redis-server password, defaults `""`
@@ -59,7 +60,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_name   = Module.concat(server_name, Pool)
     namespace   = redis_namespace(server_name)
     node_ref    = :crypto.strong_rand_bytes(24)
-    node_name   = opts[:node_name]
+    node_name   = opts[:node_name] || raise ArgumentError, ":node_name is required option"
     fastlane    = opts[:fastlane]
     server_opts = Keyword.merge(opts, name: server_name,
                                       server_name: server_name,
