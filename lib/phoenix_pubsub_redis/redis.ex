@@ -27,7 +27,7 @@ defmodule Phoenix.PubSub.Redis do
 
     * `:url` - The url to the redis server ie: `redis://username:password@host:port`
     * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
-    * `:node_name` - The required name of the node, ie: `System.get_env("NODE")`
+    * `:node_name` - The required name of the node, defaults to Erlang --sname flag.
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
     * `:password` - The redis-server password, defaults `""`
@@ -60,7 +60,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_name   = Module.concat(server_name, Pool)
     namespace   = redis_namespace(server_name)
     node_ref    = :crypto.strong_rand_bytes(24)
-    node_name   = opts[:node_name] || raise ArgumentError, ":node_name is required option"
+    node_name   = validate_node_name!(node(), opts)
     fastlane    = opts[:fastlane]
     server_opts = Keyword.merge(opts, name: server_name,
                                       server_name: server_name,
@@ -114,4 +114,15 @@ defmodule Phoenix.PubSub.Redis do
   @doc false
   def node_name(nil), do: node()
   def node_name(configured_name), do: configured_name
+
+  defp validate_node_name!(:nonode@nohost, opts) do
+    node_name = Keyword.get(opts, :node_name)
+    if is_nil(node_name) do
+      raise ArgumentError, ":node_name is a required option"
+    else
+      node_name
+    end
+  end
+
+  defp validate_node_name!(node_name, _opts), do: node_name
 end
