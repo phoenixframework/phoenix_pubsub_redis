@@ -33,6 +33,9 @@ defmodule Phoenix.PubSub.RedisServer do
     :poolboy.transaction pool_name, fn worker_pid ->
       case Redix.command(worker_pid, ["PUBLISH", namespace, bin_msg]) do
         {:ok, _} -> :ok
+        {:error, :closed} ->
+          Logger.error "failed to publish broadcast due to closed redis connection"
+          :ok
         {:error, reason} -> {:error, reason}
       end
     end
@@ -64,7 +67,12 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   def handle_info({:redix_pubsub, redix_pid, :subscribed, _}, %{redix_pid: redix_pid} = state) do
-    {:noreply, state}
+    {:noreply, %{state | status: :connected}}
+  end
+
+  def handle_info({:redix_pubsub, redix_pid, :disconnected, %{reason: reason}}, %{redix_pid: redix_pid} = state) do
+    Logger.error "disconnected from pubsub: #{reason}"
+    {:noreply, %{state | status: :disconnected}}
   end
 
   def handle_info({:redix_pubsub, redix_pid, :message, %{payload: bin_msg}}, %{redix_pid: redix_pid} = state) do
