@@ -60,7 +60,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_name   = Module.concat(server_name, Pool)
     namespace   = redis_namespace(server_name)
     node_ref    = :crypto.strong_rand_bytes(24)
-    node_name   = validate_node_name!(node(), opts)
+    node_name   = validate_node_name!(opts)
     fastlane    = opts[:fastlane]
     server_opts = Keyword.merge(opts, name: server_name,
                                       server_name: server_name,
@@ -115,14 +115,12 @@ defmodule Phoenix.PubSub.Redis do
   def node_name(nil), do: node()
   def node_name(configured_name), do: configured_name
 
-  defp validate_node_name!(:nonode@nohost, opts) do
-    node_name = Keyword.get(opts, :node_name)
-    if is_nil(node_name) do
-      raise ArgumentError, ":node_name is a required option"
-    else
-      node_name
+
+  defp validate_node_name!(opts) do
+    case opts[:node_name] || node() do
+      name when name in [nil, :nonode@nohost] ->
+        raise ArgumentError, ":node_name is a required option for unnamed nodes"
+      name -> name
     end
   end
-
-  defp validate_node_name!(node_name, _opts), do: node_name
 end
