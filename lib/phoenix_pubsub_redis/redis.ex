@@ -8,7 +8,7 @@ defmodule Phoenix.PubSub.Redis do
 
       config :my_app, MyApp.Endpoint,
         pubsub: [adapter: Phoenix.PubSub.Redis,
-                 host: "192.168.1.100"]
+                 host: "192.168.1.100", node_name: System.get_env("NODE")]
 
   You will also need to add `:phoenix_pubsub_redis` to your deps:
 
@@ -27,10 +27,11 @@ defmodule Phoenix.PubSub.Redis do
 
     * `:url` - The url to the redis server ie: `redis://username:password@host:port`
     * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
+    * `:node_name` - The required name of the node, defaults to Erlang --sname flag.
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
     * `:password` - The redis-server password, defaults `""`
-    * `:redis_pool_size` - The size of hte redis connection pool. Defaults `5`
+    * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
     * `:pool_size` - Both the size of the local pubsub server pool and subscriber
       shard size. Defaults `1`. A single pool is often enough for most use-cases,
       but for high subscriber counts on a single topic or greater than 1M
@@ -59,7 +60,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_name   = Module.concat(server_name, Pool)
     namespace   = redis_namespace(server_name)
     node_ref    = :crypto.strong_rand_bytes(24)
-    node_name   = opts[:node_name]
+    node_name   = validate_node_name!(opts)
     fastlane    = opts[:fastlane]
     server_opts = Keyword.merge(opts, name: server_name,
                                       server_name: server_name,
@@ -113,4 +114,13 @@ defmodule Phoenix.PubSub.Redis do
   @doc false
   def node_name(nil), do: node()
   def node_name(configured_name), do: configured_name
+
+
+  defp validate_node_name!(opts) do
+    case opts[:node_name] || node() do
+      name when name in [nil, :nonode@nohost] ->
+        raise ArgumentError, ":node_name is a required option for unnamed nodes"
+      name -> name
+    end
+  end
 end
