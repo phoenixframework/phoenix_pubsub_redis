@@ -33,6 +33,9 @@ defmodule Phoenix.PubSub.RedisServer do
     :poolboy.transaction pool_name, fn worker_pid ->
       case Redix.command(worker_pid, ["PUBLISH", namespace, bin_msg]) do
         {:ok, _} -> :ok
+        {:error, :closed} ->
+          Logger.error "failed to publish broadcast due to closed redis connection"
+          :ok
         {:error, reason} -> {:error, reason}
       end
     end
@@ -52,7 +55,6 @@ defmodule Phoenix.PubSub.RedisServer do
               namespace: Keyword.fetch!(opts, :namespace),
               node_ref: Keyword.fetch!(opts, :node_ref),
               redix_pid: nil,
-              status: :disconnected,
               reconnect_timer: nil,
               opts: opts}
 
@@ -64,6 +66,11 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   def handle_info({:redix_pubsub, redix_pid, :subscribed, _}, %{redix_pid: redix_pid} = state) do
+    {:noreply, state}
+  end
+
+  def handle_info({:redix_pubsub, redix_pid, :disconnected, %{reason: reason}}, %{redix_pid: redix_pid} = state) do
+    Logger.error "Phoenix.PubSub disconnected from Redis with reason #{inspect reason} (awaiting reconnection)"
     {:noreply, state}
   end
 
@@ -99,8 +106,7 @@ defmodule Phoenix.PubSub.RedisServer do
   defp establish_failed(state) do
     Logger.error "unable to establish initial redis connection. Attempting to reconnect..."
     %{state | redix_pid: nil,
-              reconnect_timer: schedule_reconnect(state),
-              status: :disconnected}
+              reconnect_timer: schedule_reconnect(state)}
   end
 
   defp schedule_reconnect(state) do
@@ -112,7 +118,7 @@ defmodule Phoenix.PubSub.RedisServer do
 
   defp establish_success(%{redix_pid: redix_pid} = state) do
     :ok = Redix.PubSub.subscribe(redix_pid, state.namespace, self())
-    %{state | status: :connected}
+    state
   end
 
   defp establish_conn(state) do
