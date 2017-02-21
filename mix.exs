@@ -1,7 +1,7 @@
 defmodule PhoenixPubsubRedis.Mixfile do
   use Mix.Project
 
-  @version "2.1.2"
+  @version "2.1.3"
 
   def project do
     [app: :phoenix_pubsub_redis,

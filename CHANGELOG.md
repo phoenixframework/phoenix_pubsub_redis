@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.1.3 (2017-2-21)
+
+* Bug fixes
+  * Handle disconnected Redis connections
+
 ## v2.1.2 (2016-7-7)
 
 * Bug fixes
