@@ -13,7 +13,7 @@ defmodule Phoenix.PubSub.RedisServer do
   Starts the server
   """
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: Dict.fetch!(opts, :name))
+    GenServer.start_link(__MODULE__, opts, name: Keyword.fetch!(opts, :name))
   end
 
   @doc false
