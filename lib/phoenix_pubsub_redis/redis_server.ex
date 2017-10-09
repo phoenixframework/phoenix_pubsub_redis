@@ -33,7 +33,7 @@ defmodule Phoenix.PubSub.RedisServer do
     :poolboy.transaction pool_name, fn worker_pid ->
       case Redix.command(worker_pid, ["PUBLISH", namespace, bin_msg]) do
         {:ok, _} -> :ok
-        {:error, :closed} ->
+        {:error, %Redix.ConnectionError{reason: :closed}} ->
           Logger.error "failed to publish broadcast due to closed redis connection"
           :ok
         {:error, reason} -> {:error, reason}
