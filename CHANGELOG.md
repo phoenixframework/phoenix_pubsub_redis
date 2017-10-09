@@ -1,5 +1,12 @@
 # Changelog
 
+## master
+
+## v2.1.4 (2017-10-9)
+
+* Enhancements
+  * Update redix and redix\_pubsub versions
+
 ## v2.1.3 (2017-2-21)
 
 * Bug fixes
