@@ -65,16 +65,16 @@ defmodule Phoenix.PubSub.RedisServer do
     {:noreply, establish_conn(%{state | reconnect_timer: nil})}
   end
 
-  def handle_info({:redix_pubsub, redix_pid, :subscribed, _}, %{redix_pid: redix_pid} = state) do
+  def handle_info({:redix_pubsub, redix_pid, _reference, :subscribed, _}, %{redix_pid: redix_pid} = state) do
     {:noreply, state}
   end
 
-  def handle_info({:redix_pubsub, redix_pid, :disconnected, %{reason: reason}}, %{redix_pid: redix_pid} = state) do
+  def handle_info({:redix_pubsub, redix_pid, _reference, :disconnected, %{reason: reason}}, %{redix_pid: redix_pid} = state) do
     Logger.error "Phoenix.PubSub disconnected from Redis with reason #{inspect reason} (awaiting reconnection)"
     {:noreply, state}
   end
 
-  def handle_info({:redix_pubsub, redix_pid, :message, %{payload: bin_msg}}, %{redix_pid: redix_pid} = state) do
+  def handle_info({:redix_pubsub, redix_pid, _reference, :message, %{payload: bin_msg}}, %{redix_pid: redix_pid} = state) do
     {_vsn, remote_node_ref, fastlane, pool_size, from_pid, topic, msg} = :erlang.binary_to_term(bin_msg)
 
     if remote_node_ref == state.node_ref do
@@ -117,13 +117,13 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   defp establish_success(%{redix_pid: redix_pid} = state) do
-    :ok = Redix.PubSub.subscribe(redix_pid, state.namespace, self())
+    {:ok, _reference} = Redix.PubSub.subscribe(redix_pid, state.namespace, self())
     state
   end
 
   defp establish_conn(state) do
     redis_opts = Keyword.take(state.opts, @redix_opts)
-    case Redix.PubSub.start_link(redis_opts, sync_connect: true) do
+    case Redix.PubSub.start_link(Keyword.merge(redis_opts, sync_connect: true)) do
       {:ok, redix_pid} -> establish_success(%{state | redix_pid: redix_pid})
       {:error, _} ->
         establish_failed(state)
