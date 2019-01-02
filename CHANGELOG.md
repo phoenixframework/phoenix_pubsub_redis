@@ -2,6 +2,11 @@
 
 ## master
 
+## v2.1.5 (2018-1-2)
+
+* Enhancements
+  * Update redix and redix\_pubsub versions
+
 ## v2.1.4 (2017-10-9)
 
 * Enhancements
