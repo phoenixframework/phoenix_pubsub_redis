@@ -18,13 +18,12 @@ defmodule PhoenixPubsubRedis.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :poolboy, :redix, :redix_pubsub, :phoenix_pubsub]]
+    [applications: [:logger, :poolboy, :redix, :phoenix_pubsub]]
   end
 
   defp deps do
     [{:phoenix_pubsub, "~> 1.0"},
-     {:redix, "~> 0.8.1"},
-     {:redix_pubsub, "~> 0.5.0"},
+     {:redix, "~> 0.9.0"},
      {:ex_doc, "~> 0.17.1", only: :docs},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
   end
