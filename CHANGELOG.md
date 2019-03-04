@@ -2,6 +2,11 @@
 
 ## master
 
+## v2.1.6 (2018-3-4)
+
+* Enhancements
+  * Allow passing :ssl option to redix
+
 ## v2.1.5 (2018-1-2)
 
 * Enhancements
