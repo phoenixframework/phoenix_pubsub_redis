@@ -2,6 +2,11 @@
 
 ## master
 
+## v2.1.7 (2018-3-28)
+
+* Bug fixes
+  * Fix incorrect error structure on :disconnected
+
 ## v2.1.6 (2018-3-4)
 
 * Enhancements
