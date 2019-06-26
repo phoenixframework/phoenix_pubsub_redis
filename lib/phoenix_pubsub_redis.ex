@@ -1,2 +1,0 @@
-defmodule PhoenixPubsubRedis do
-end

@@ -1,26 +1,18 @@
 defmodule Phoenix.PubSub.Redis do
-  use Supervisor
-
   @moduledoc """
   Phoenix PubSub adapter based on Redis.
 
-  To use Redis as your PubSub adapter, simply add it to your Endpoint's config:
+  To start it, list it in your supervision tree as:
 
-      config :my_app, MyApp.Endpoint,
-        pubsub: [adapter: Phoenix.PubSub.Redis,
-                 host: "192.168.1.100", node_name: System.get_env("NODE")]
+      {Phoenix.PubSub,
+       adapter: Phoenix.PubSub.Redis,
+       host: "192.168.1.100",
+       node_name: System.get_env("NODE")}
 
   You will also need to add `:phoenix_pubsub_redis` to your deps:
 
       defp deps do
         [{:phoenix_pubsub_redis, "~> 2.1.0"}]
-      end
-
-  And also add `:phoenix_pubsub_redis` to your list of applications:
-
-      def application do
-        [mod: {MyApp, []},
-         applications: [..., :phoenix, :phoenix_pubsub_redis]]
       end
 
   ## Options
@@ -33,77 +25,84 @@ defmodule Phoenix.PubSub.Redis do
     * `:password` - The redis-server password, defaults `""`
     * `:ssl` - The redis-server ssl option, defaults `false`
     * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
-    * `:pool_size` - Both the size of the local pubsub server pool and subscriber
-      shard size. Defaults `1`. A single pool is often enough for most use-cases,
-      but for high subscriber counts on a single topic or greater than 1M
-      clients, a pool size equal to the number of schedulers (cores) is a well
-      rounded size.
 
   """
 
+  use Supervisor
+
+  @behaviour Phoenix.PubSub.Adapter
   @redis_pool_size 5
+  @redis_opts [:host, :port, :password, :database, :ssl]
   @defaults [host: "127.0.0.1", port: 6379]
 
+  ## Adapter callbacks
 
-  def start_link(name, opts) do
-    supervisor_name = Module.concat(name, Supervisor)
-    Supervisor.start_link(__MODULE__, [name, opts], name: supervisor_name)
-  end
+  @impl true
+  defdelegate node_name(adapter_name),
+    to: Phoenix.PubSub.RedisServer
+
+  @impl true
+  defdelegate broadcast(adapter_name, topic, message, dispatcher),
+    to: Phoenix.PubSub.RedisServer
+
+  @impl true
+  defdelegate direct_broadcast(adapter_name, node_name, topic, message, dispatcher),
+    to: Phoenix.PubSub.RedisServer
+
+  ## GenServer callbacks
 
   @doc false
-  def init([server_name, opts]) do
-    pool_size = Keyword.fetch!(opts, :pool_size)
+  def start_link(opts) do
+    adapter_name = Keyword.fetch!(opts, :adapter_name)
+    supervisor_name = Module.concat(adapter_name, "Supervisor")
+    Supervisor.start_link(__MODULE__, opts, name: supervisor_name)
+  end
+
+  @impl true
+  def init(opts) do
+    pubsub_name = Keyword.fetch!(opts, :name)
+    adapter_name = Keyword.fetch!(opts, :adapter_name)
 
     opts = handle_url_opts(opts)
     opts = Keyword.merge(@defaults, opts)
-    redis_opts = Keyword.take(opts, [:host, :port, :password, :database, :ssl])
+    redis_opts = Keyword.take(opts, @redis_opts)
 
-    pool_name   = Module.concat(server_name, Pool)
-    namespace   = redis_namespace(server_name)
-    node_ref    = :crypto.strong_rand_bytes(24)
-    node_name   = validate_node_name!(opts)
-    fastlane    = opts[:fastlane]
-    server_opts = Keyword.merge(opts, name: server_name,
-                                      server_name: server_name,
-                                      pool_name: pool_name,
-                                      namespace: namespace,
-                                      node_ref: node_ref)
+    node_name = opts[:node_name] || node()
+    validate_node_name!(node_name)
+
+    :ets.new(adapter_name, [:public, :named_table, read_concurrency: true])
+    :ets.insert(adapter_name, {:node_name, node_name})
+
     pool_opts = [
-      name: {:local, pool_name},
+      name: {:local, adapter_name},
       worker_module: Redix,
       size: opts[:redis_pool_size] || @redis_pool_size,
       max_overflow: 0
     ]
 
-    dispatch_rules = [{:broadcast, Phoenix.PubSub.RedisServer, [fastlane, pool_name, pool_size, namespace, node_ref]},
-                      {:direct_broadcast, Phoenix.PubSub.RedisServer, [fastlane, pool_name, pool_size, namespace, node_ref]},
-                      {:node_name, __MODULE__, [node_name]}]
-
     children = [
-      supervisor(Phoenix.PubSub.LocalSupervisor, [server_name, pool_size, dispatch_rules]),
-      worker(Phoenix.PubSub.RedisServer, [server_opts]),
-      :poolboy.child_spec(pool_name, pool_opts, redis_opts),
+      {Phoenix.PubSub.RedisServer, {pubsub_name, adapter_name, node_name, redis_opts}},
+      :poolboy.child_spec(adapter_name, pool_opts, redis_opts)
     ]
 
-    supervise children, strategy: :rest_for_one
+    Supervisor.init(children, strategy: :rest_for_one)
   end
-
-  defp redis_namespace(server_name), do: "phx:#{server_name}"
 
   defp handle_url_opts(opts) do
     if opts[:url] do
-      do_handle_url_opts(opts)
+      merge_url_opts(opts)
     else
       opts
     end
   end
 
-  defp do_handle_url_opts(opts) do
+  defp merge_url_opts(opts) do
     info = URI.parse(opts[:url])
+
     user_opts =
       case String.split(info.userinfo || "", ":") do
-        [""]                 -> []
-        [username]           -> [username: username]
+        [""] -> []
+        [username] -> [username: username]
         [username, password] -> [username: username, password: password]
       end
 
@@ -112,16 +111,11 @@ defmodule Phoenix.PubSub.Redis do
     |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
   end
 
-  @doc false
-  def node_name(nil), do: node()
-  def node_name(configured_name), do: configured_name
-
-
-  defp validate_node_name!(opts) do
-    case opts[:node_name] || node() do
-      name when name in [nil, :nonode@nohost] ->
-        raise ArgumentError, ":node_name is a required option for unnamed nodes"
-      name -> name
+  defp validate_node_name!(node_name) do
+    if node_name in [nil, :nonode@nohost] do
+      raise ArgumentError, ":node_name is a required option for unnamed nodes"
     end
+
+    :ok
   end
 end
