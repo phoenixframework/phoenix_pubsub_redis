@@ -17,7 +17,7 @@ defmodule Phoenix.PubSub.Redis do
 
   ## Options
 
-    * `:url` - The url to the redis server ie: `redis://username:password@host:port`
+    * `:url` - The url to the redis server ie: `redis://username:password@host:port`, or a `{:system, "ENVIRONMENT_VARIABLE"}` tuple to read this at runtime
     * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
     * `:node_name` - The required name of the node, defaults to Erlang --sname flag.
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
@@ -97,7 +97,7 @@ defmodule Phoenix.PubSub.Redis do
   end
 
   defp merge_url_opts(opts) do
-    info = URI.parse(opts[:url])
+    info = opts[:url] |> read_url |> URI.parse()
 
     user_opts =
       case String.split(info.userinfo || "", ":") do
@@ -110,6 +110,12 @@ defmodule Phoenix.PubSub.Redis do
     |> Keyword.merge(user_opts)
     |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
   end
+
+  defp read_url(url) when is_binary(url), do: url
+
+  defp read_url({:system, key}),
+    do:
+      System.get_env(key) || raise(~s(expected environment variable "#{key}", but it was not set))
 
   defp validate_node_name!(node_name) do
     if node_name in [nil, :nonode@nohost] do
