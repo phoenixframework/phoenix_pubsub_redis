@@ -32,7 +32,7 @@ defmodule Phoenix.PubSub.Redis do
 
   @behaviour Phoenix.PubSub.Adapter
   @redis_pool_size 5
-  @redis_opts [:host, :port, :password, :database, :ssl]
+  @redis_opts [:host, :port, :password, :database, :ssl, :socket_opts]
   @defaults [host: "127.0.0.1", port: 6379]
 
   ## Adapter callbacks
