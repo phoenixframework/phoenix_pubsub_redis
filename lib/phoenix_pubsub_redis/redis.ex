@@ -25,6 +25,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:password` - The redis-server password, defaults `""`
     * `:ssl` - The redis-server ssl option, defaults `false`
     * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
+    * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
 
   """
 
