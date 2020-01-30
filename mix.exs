@@ -24,7 +24,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
   defp deps do
     [{:phoenix_pubsub, "~> 1.0"},
      {:redix, "~> 0.9.0"},
-     {:ex_doc, "~> 0.19.0", only: :docs},
+     {:ex_doc, "~> 0.21.0", only: :docs},
      {:poolboy, "~> 1.5.1 or ~> 1.6"}]
   end
 
