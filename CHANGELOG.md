@@ -2,6 +2,11 @@
 
 ## master
 
+## v2.1.8 (2020-1-30)
+
+* Enhancements
+  * Allow passing :socket_opts to redix
+
 ## v2.1.7 (2018-3-28)
 
 * Bug fixes
