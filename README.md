@@ -22,14 +22,15 @@ config :my_app, MyApp.Endpoint,
 
 Config Options
 
-Option       | Description                                                            | Default        |
-:----------- | :--------------------------------------------------------------------- | :------------- |
-`:name`      | The required name to register the PubSub processes, ie: `MyApp.PubSub` |                |
-`:node_name` | The required name of the node, ie: `System.get_env("NODE")`            |                |
-`:url`       | The redis-server URL, ie: `redis://username:password@host:port`        |                |
-`:host`      | The redis-server host IP                                               | `"127.0.0.1"`  |
-`:port`      | The redis-server port                                                  | `6379`         |
-`:password`  | The redis-server password                                              | `""`           |
+Option         | Description                                                            | Default        |
+:--------------|------------------------------------------------------------------------|----------------|
+`:name`        | The required name to register the PubSub processes, ie: `MyApp.PubSub` |                |
+`:node_name`   | The required name of the node, ie: `System.get_env("NODE")`            |                |
+`:url`         | The redis-server URL, ie: `redis://username:password@host:port`        |                |
+`:host`        | The redis-server host IP                                               | `"127.0.0.1"`  |
+`:port`        | The redis-server port                                                  | `6379`         |
+`:password`    | The redis-server password                                              | `""`           |
+`:socket_opts` | The redis-server network layer options                                 | `[]`           |
 
 And also add `:phoenix_pubsub_redis` to your list of applications:
 

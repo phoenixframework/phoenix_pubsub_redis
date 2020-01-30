@@ -7,7 +7,7 @@ defmodule Phoenix.PubSub.RedisServer do
 
   @reconnect_after_ms 5_000
   @redis_msg_vsn 1
-  @redix_opts [:host, :port, :password, :database, :ssl]
+  @redix_opts [:host, :port, :password, :database, :ssl, :socket_opts]
 
   @doc """
   Starts the server

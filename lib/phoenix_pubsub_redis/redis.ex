@@ -38,6 +38,7 @@ defmodule Phoenix.PubSub.Redis do
       but for high subscriber counts on a single topic or greater than 1M
       clients, a pool size equal to the number of schedulers (cores) is a well
       rounded size.
+    * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
 
   """
 
