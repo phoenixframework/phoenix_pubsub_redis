@@ -1,7 +1,7 @@
 defmodule PhoenixPubsubRedis.Mixfile do
   use Mix.Project
 
-  @version "3.0.0-dev"
+  @version "3.0.0"
   @source_url "https://github.com/phoenixframework/phoenix_pubsub_redis"
 
   def project do
@@ -37,9 +37,9 @@ defmodule PhoenixPubsubRedis.Mixfile do
 
   defp phoenix_pubsub do
     if path = System.get_env("PUBSUB_PATH") do
-      {:phoenix_pubsub, "~> 2.0-dev", path: path}
+      {:phoenix_pubsub, "~> 2.0", path: path}
     else
-      {:phoenix_pubsub, "~> 2.0-dev", github: "phoenixframework/phoenix_pubsub"}
+      {:phoenix_pubsub, "~> 2.0"}
     end
   end
 
