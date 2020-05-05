@@ -16,7 +16,7 @@ end
 
 # application.ex
 children = [
-# ...,
+  # ...,
   {Phoenix.PubSub,
    adapter: Phoenix.PubSub.Redis,
    host: "192.168.1.100",
