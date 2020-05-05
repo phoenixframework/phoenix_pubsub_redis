@@ -6,7 +6,7 @@ See the [docs](https://hexdocs.pm/phoenix_pubsub_redis/) for more information.
 
 ## Usage
 
-To use Redis as your PubSub adapter, simply add it to your deps and Endpoint's config:
+To use Redis as your PubSub adapter, simply add it to your deps and Application's Supervisor tree:
 
 ```elixir
 # mix.exs
@@ -14,10 +14,13 @@ defp deps do
   [{:phoenix_pubsub_redis, "~> 3.0.0"}],
 end
 
-# config/config.exs
-config :my_app, MyApp.Endpoint,
-  pubsub: [adapter: Phoenix.PubSub.Redis,
-           host: "192.168.1.100", node_name: System.get_env("NODE")]
+# application.ex
+children = [
+  ...,
+  {Phoenix.PubSub,
+   adapter: Phoenix.PubSub.Redis,
+   host: "192.168.1.100",
+   node_name: System.get_env("NODE")}
 ```
 
 Config Options
