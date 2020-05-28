@@ -19,7 +19,7 @@ defmodule Phoenix.PubSub.Redis do
 
     * `:url` - The url to the redis server ie: `redis://username:password@host:port`
     * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
-    * `:node_name` - The required name of the node, defaults to Erlang --sname flag.
+    * `:node_name` - The required name of the node, defaults to Erlang --sname flag. It must be unique.
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
     * `:password` - The redis-server password, defaults `""`
