@@ -25,6 +25,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:password` - The redis-server password, defaults `""`
     * `:ssl` - The redis-server ssl option, defaults `false`
     * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
+    * `:compression_level` - Compression level applied to serialized terms - from `0` (no compression), to `9` (highest). Defaults `0`
     * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
 
   """
@@ -63,6 +64,7 @@ defmodule Phoenix.PubSub.Redis do
   def init(opts) do
     pubsub_name = Keyword.fetch!(opts, :name)
     adapter_name = Keyword.fetch!(opts, :adapter_name)
+    compression_level = Keyword.get(opts, :compression_level, 0)
 
     opts = handle_url_opts(opts)
     opts = Keyword.merge(@defaults, opts)
@@ -73,6 +75,7 @@ defmodule Phoenix.PubSub.Redis do
 
     :ets.new(adapter_name, [:public, :named_table, read_concurrency: true])
     :ets.insert(adapter_name, {:node_name, node_name})
+    :ets.insert(adapter_name, {:compression_level, compression_level})
 
     pool_opts = [
       name: {:local, adapter_name},
