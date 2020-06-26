@@ -23,8 +23,9 @@ defmodule Phoenix.PubSub.RedisServer do
 
   defp publish(adapter_name, mode, node_name, topic, message, dispatcher) do
     namespace = redis_namespace(adapter_name)
+    compression_level = compression_level(adapter_name)
     redis_msg = {@redis_msg_vsn, mode, node_name, topic, message, dispatcher}
-    bin_msg = :erlang.term_to_binary(redis_msg)
+    bin_msg = :erlang.term_to_binary(redis_msg, compressed: compression_level)
 
     :poolboy.transaction(adapter_name, fn worker_pid ->
       case Redix.command(worker_pid, ["PUBLISH", namespace, bin_msg]) do
@@ -39,6 +40,10 @@ defmodule Phoenix.PubSub.RedisServer do
           {:error, reason}
       end
     end)
+  end
+
+  defp compression_level(adapter_name) do
+    :ets.lookup_element(adapter_name, :compression_level, 2)
   end
 
   ## Server callbacks
