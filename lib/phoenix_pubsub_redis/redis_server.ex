@@ -67,6 +67,14 @@ defmodule Phoenix.PubSub.RedisServer do
     {:ok, establish_conn(state)}
   end
 
+  def handle_call(:healthcheck, _from, %{redix_pid: nil} = state) do
+    {:reply, :error, state}
+  end
+
+  def handle_call(:healthcheck, _from, %{redix_pid: pid} = state) when is_pid(pid) do
+    {:reply, :ok, state}
+  end
+
   def handle_info(:establish_conn, state) do
     {:noreply, establish_conn(%{state | reconnect_timer: nil})}
   end
