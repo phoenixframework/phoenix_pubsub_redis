@@ -27,6 +27,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
     * `:compression_level` - Compression level applied to serialized terms - from `0` (no compression), to `9` (highest). Defaults `0`
     * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
+    * `:sentinel` - Redix sentinel configuration. Default to `nil`
 
   """
 
@@ -34,7 +35,7 @@ defmodule Phoenix.PubSub.Redis do
 
   @behaviour Phoenix.PubSub.Adapter
   @redis_pool_size 5
-  @redis_opts [:host, :port, :password, :database, :ssl, :socket_opts]
+  @redis_opts [:host, :port, :password, :database, :ssl, :socket_opts, :sentinel]
   @defaults [host: "127.0.0.1", port: 6379]
 
   ## Adapter callbacks
