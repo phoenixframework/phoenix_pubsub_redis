@@ -33,6 +33,7 @@ Option                  | Description                                           
 `:host`                 | The redis-server host IP                                                  | `"127.0.0.1"`  |
 `:port`                 | The redis-server port                                                     | `6379`         |
 `:password`             | The redis-server password                                                 | `""`           |
+`:ssl`                  | The redis-server SSL flag                                                 | `false`        |
 `:compression_level`    | Compression level applied to serialized terms (`0` - none, `9` - highest) | `0`            |
 `:socket_opts`          | The redis-server network layer options                                    | `[]`           |
 
