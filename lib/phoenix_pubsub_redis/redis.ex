@@ -68,7 +68,14 @@ defmodule Phoenix.PubSub.Redis do
     compression_level = Keyword.get(opts, :compression_level, 0)
 
     opts = handle_url_opts(opts)
-    opts = Keyword.merge(@defaults, opts)
+
+    opts =
+      if is_nil(opts[:sentinel]) do
+        Keyword.merge(@defaults, opts)
+      else
+        opts
+      end
+
     redis_opts = Keyword.take(opts, @redis_opts)
 
     node_name = opts[:node_name] || node()
