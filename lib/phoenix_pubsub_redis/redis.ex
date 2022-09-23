@@ -35,8 +35,8 @@ defmodule Phoenix.PubSub.Redis do
 
   @behaviour Phoenix.PubSub.Adapter
   @redis_pool_size 5
-  @redis_opts [:host, :port, :password, :database, :ssl, :socket_opts, :sentinel, :username]
-  @defaults [host: "127.0.0.1", port: 6379]
+  @compression_level 0
+  @redis_opts [:host, :port, :password, :database, :ssl, :socket_opts, :sentinel]
 
   ## Adapter callbacks
 
@@ -63,15 +63,14 @@ defmodule Phoenix.PubSub.Redis do
 
   @impl true
   def init(opts) do
+    opts = build_opts(opts)
     pubsub_name = Keyword.fetch!(opts, :name)
     adapter_name = Keyword.fetch!(opts, :adapter_name)
-    compression_level = Keyword.get(opts, :compression_level, 0)
+    compression_level = Keyword.fetch!(opts, :compression_level)
+    redis_opts = Keyword.fetch!(opts, :redis_opts)
+    node_name = Keyword.fetch!(opts, :node_name)
+    redis_pool_size = Keyword.fetch!(opts, :redis_pool_size)
 
-    opts = handle_url_opts(opts)
-    opts = Keyword.merge(@defaults, opts)
-    redis_opts = Keyword.take(opts, @redis_opts)
-
-    node_name = opts[:node_name] || node()
     validate_node_name!(node_name)
 
     :ets.new(adapter_name, [:public, :named_table, read_concurrency: true])
@@ -81,7 +80,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_opts = [
       name: {:local, adapter_name},
       worker_module: Redix,
-      size: opts[:redis_pool_size] || @redis_pool_size,
+      size: redis_pool_size,
       max_overflow: 0
     ]
 
@@ -93,27 +92,29 @@ defmodule Phoenix.PubSub.Redis do
     Supervisor.init(children, strategy: :rest_for_one)
   end
 
-  defp handle_url_opts(opts) do
-    if opts[:url] do
-      merge_url_opts(opts)
-    else
-      opts
-    end
+  @doc false
+  def build_opts(opts) do
+    opts
+    |> Keyword.put_new(:redis_pool_size, @redis_pool_size)
+    |> Keyword.put_new(:compression_level, @compression_level)
+    |> Keyword.put(:redis_opts, redis_opts(opts))
+    |> Keyword.put_new(:node_name, node())
+    |> Keyword.take([
+      :node_name,
+      :compression_level,
+      :name,
+      :adapter_name,
+      :redis_opts,
+      :redis_pool_size
+    ])
   end
 
-  defp merge_url_opts(opts) do
-    info = URI.parse(opts[:url])
-
-    user_opts =
-      case String.split(info.userinfo || "", ":") do
-        [""] -> []
-        [username] -> [username: username]
-        [username, password] -> [username: username, password: password]
-      end
-
+  defp redis_opts(opts) do
+    # TODO: update docs
+    # TODO: parse uri https://github.com/whatyouhide/redix/blob/v1.1.5/lib/redix/uri.ex#L5
     opts
-    |> Keyword.merge(user_opts)
-    |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
+    |> Keyword.take(@redis_opts ++ [:url])
+    |> Keyword.merge(Keyword.get(opts, :redis_opts, []))
   end
 
   defp validate_node_name!(node_name) do
