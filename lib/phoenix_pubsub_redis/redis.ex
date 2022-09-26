@@ -110,10 +110,10 @@ defmodule Phoenix.PubSub.Redis do
   end
 
   defp redis_opts(opts) do
-    # TODO: update docs
-    # TODO: parse uri https://github.com/whatyouhide/redix/blob/v1.1.5/lib/redix/uri.ex#L5
-    opts
-    |> Keyword.take(@redis_opts ++ [:url])
+    user_opts = if opts[:url], do: Redix.URI.opts_from_uri(opts[:url]), else: []
+
+    user_opts
+    |> Keyword.merge(Keyword.take(opts, @redis_opts))
     |> Keyword.merge(Keyword.get(opts, :redis_opts, []))
   end
 

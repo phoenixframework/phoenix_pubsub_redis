@@ -32,7 +32,7 @@ defmodule Phoenix.PubSub.RedisTest do
                  host: "example.com",
                  port: 5000,
                  password: "password",
-                 database: "database",
+                 database: 1,
                  ssl: true,
                  socket_opts: [verify: :no_verify],
                  sentinel: [
@@ -41,8 +41,7 @@ defmodule Phoenix.PubSub.RedisTest do
                      "redis://sent2.example.com:26379"
                    ],
                    group: "main"
-                 ],
-                 url: "redis://localhost:6379/3"
+                 ]
                )
              ) ==
                Map.new(
@@ -55,7 +54,7 @@ defmodule Phoenix.PubSub.RedisTest do
                    host: "example.com",
                    port: 5000,
                    password: "password",
-                   database: "database",
+                   database: 1,
                    ssl: true,
                    socket_opts: [verify: :no_verify],
                    sentinel: [
@@ -64,8 +63,7 @@ defmodule Phoenix.PubSub.RedisTest do
                        "redis://sent2.example.com:26379"
                      ],
                      group: "main"
-                   ],
-                   url: "redis://localhost:6379/3"
+                   ]
                  ]
                )
     end
@@ -78,10 +76,10 @@ defmodule Phoenix.PubSub.RedisTest do
                  host: "example.com",
                  port: 5000,
                  password: "another",
-                 database: "another",
+                 database: 1,
                  redis_opts: [
                    password: "password",
-                   database: "database"
+                   database: 2
                  ]
                )
              ) ==
@@ -95,7 +93,31 @@ defmodule Phoenix.PubSub.RedisTest do
                    host: "example.com",
                    port: 5000,
                    password: "password",
-                   database: "database"
+                   database: 2
+                 ]
+               )
+    end
+
+    test "parse url opts" do
+      assert Map.new(
+               Redis.build_opts(
+                 name: Phoenix.TestName,
+                 adapter_name: :adapter_name,
+                 url: "rediss://username:password@example.com:5000/1"
+               )
+             ) ==
+               Map.new(
+                 node_name: node(),
+                 name: Phoenix.TestName,
+                 adapter_name: :adapter_name,
+                 redis_pool_size: 5,
+                 compression_level: 0,
+                 redis_opts: [
+                   ssl: true,
+                   database: 1,
+                   password: "password",
+                   port: 5000,
+                   host: "example.com"
                  ]
                )
     end
