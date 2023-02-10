@@ -22,7 +22,7 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   defp publish(adapter_name, mode, node_name, topic, message, dispatcher) do
-    namespace = redis_namespace(adapter_name)
+    namespace = redis_channel(adapter_name)
     compression_level = compression_level(adapter_name)
     redis_msg = {@redis_msg_vsn, mode, node_name, topic, message, dispatcher}
     bin_msg = :erlang.term_to_binary(redis_msg, compressed: compression_level)
@@ -125,7 +125,7 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   defp establish_success(%{redix_pid: redix_pid, adapter_name: adapter_name} = state) do
-    {:ok, _reference} = Redix.PubSub.subscribe(redix_pid, redis_namespace(adapter_name), self())
+    {:ok, _reference} = Redix.PubSub.subscribe(redix_pid, redis_channel(adapter_name), self())
     state
   end
 
@@ -139,5 +139,7 @@ defmodule Phoenix.PubSub.RedisServer do
     end
   end
 
-  defp redis_namespace(adapter_name), do: "phx:#{adapter_name}"
+  defp redis_channel(adapter_name) do
+    :ets.lookup_element(adapter_name, :redis_channel, 2)
+  end
 end

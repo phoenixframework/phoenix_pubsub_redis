@@ -5,6 +5,7 @@ defmodule Phoenix.PubSub.Redis do
   To start it, list it in your supervision tree as:
 
       {Phoenix.PubSub,
+       name: MyApp.PubSub,
        adapter: Phoenix.PubSub.Redis,
        host: "192.168.1.100",
        node_name: System.get_env("NODE")}
@@ -28,6 +29,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:compression_level` - Compression level applied to serialized terms - from `0` (no compression), to `9` (highest). Defaults `0`
     * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
     * `:sentinel` - Redix sentinel configuration. Default to `nil`
+    * `:redis_channel` - Redis channel to use, derived from the name by default
 
   """
 
@@ -66,6 +68,7 @@ defmodule Phoenix.PubSub.Redis do
     pubsub_name = Keyword.fetch!(opts, :name)
     adapter_name = Keyword.fetch!(opts, :adapter_name)
     compression_level = Keyword.get(opts, :compression_level, 0)
+    redis_channel = Keyword.get(opts, :redis_channel, default_redis_channel(adapter_name))
 
     opts = handle_url_opts(opts)
     opts = Keyword.merge(@defaults, opts)
@@ -77,6 +80,7 @@ defmodule Phoenix.PubSub.Redis do
     :ets.new(adapter_name, [:public, :named_table, read_concurrency: true])
     :ets.insert(adapter_name, {:node_name, node_name})
     :ets.insert(adapter_name, {:compression_level, compression_level})
+    :ets.insert(adapter_name, {:redis_channel, redis_channel})
 
     pool_opts = [
       name: {:local, adapter_name},
@@ -123,4 +127,6 @@ defmodule Phoenix.PubSub.Redis do
 
     :ok
   end
+
+  defp default_redis_channel(adapter_name), do: "phx:#{adapter_name}"
 end
