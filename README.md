@@ -35,6 +35,7 @@ Option                  | Description                                           
 `:password`             | The redis-server password                                                 | `""`           |
 `:compression_level`    | Compression level applied to serialized terms (`0` - none, `9` - highest) | `0`            |
 `:socket_opts`          | The redis-server network layer options                                    | `[]`           |
+`:key_prefix`           | The key prefix to use for the redis key                                   | `phx`           |
 
 And also add `:phoenix_pubsub_redis` to your list of applications:
 

@@ -28,6 +28,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:compression_level` - Compression level applied to serialized terms - from `0` (no compression), to `9` (highest). Defaults `0`
     * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
     * `:sentinel` - Redix sentinel configuration. Default to `nil`
+    * `:key_prefix` - Key prefix to add to the redis PubSub key. Defaults `phx`
 
   """
 
@@ -66,6 +67,7 @@ defmodule Phoenix.PubSub.Redis do
     pubsub_name = Keyword.fetch!(opts, :name)
     adapter_name = Keyword.fetch!(opts, :adapter_name)
     compression_level = Keyword.get(opts, :compression_level, 0)
+    key_prefix = Keyword.get(opts, :key_prefix, nil)
 
     opts = handle_url_opts(opts)
     opts = Keyword.merge(@defaults, opts)
@@ -74,8 +76,10 @@ defmodule Phoenix.PubSub.Redis do
     node_name = opts[:node_name] || node()
     validate_node_name!(node_name)
 
+
     :ets.new(adapter_name, [:public, :named_table, read_concurrency: true])
     :ets.insert(adapter_name, {:node_name, node_name})
+    :ets.insert(adapter_name, {:key_prefix, key_prefix})
     :ets.insert(adapter_name, {:compression_level, compression_level})
 
     pool_opts = [
