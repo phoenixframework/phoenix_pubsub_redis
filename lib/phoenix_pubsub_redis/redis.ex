@@ -28,7 +28,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:compression_level` - Compression level applied to serialized terms - from `0` (no compression), to `9` (highest). Defaults `0`
     * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
     * `:sentinel` - Redix sentinel configuration. Default to `nil`
-    * `:key_prefix` - Key prefix to add to the redis PubSub key, defaults `nil`
+    * `:key_prefix` - Key prefix to add to the redis PubSub key. Defaults `phx`
 
   """
 
