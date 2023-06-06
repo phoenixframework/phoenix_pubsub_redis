@@ -22,6 +22,7 @@ defmodule Phoenix.PubSub.Redis do
     * `:node_name` - The required name of the node, defaults to Erlang --sname flag. It must be unique.
     * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
     * `:port` - The redis-server port, defaults `6379`
+    * `:username` - The redis-server username
     * `:password` - The redis-server password, defaults `""`
     * `:ssl` - The redis-server ssl option, defaults `false`
     * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
@@ -35,7 +36,7 @@ defmodule Phoenix.PubSub.Redis do
 
   @behaviour Phoenix.PubSub.Adapter
   @redis_pool_size 5
-  @redis_opts [:host, :port, :password, :database, :ssl, :socket_opts, :sentinel]
+  @redis_opts [:host, :port, :username, :password, :database, :ssl, :socket_opts, :sentinel]
   @defaults [host: "127.0.0.1", port: 6379]
 
   ## Adapter callbacks
