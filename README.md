@@ -19,22 +19,20 @@ children = [
   # ...,
   {Phoenix.PubSub,
    adapter: Phoenix.PubSub.Redis,
-   host: "192.168.1.100",
+   redis_opts: [host: "192.168.1.100"],
    node_name: System.get_env("NODE")}
 ```
 
 Config Options
 
-Option                  | Description                                                               | Default        |
-:-----------------------| :------------------------------------------------------------------------ | :------------- |
-`:name`                 | The required name to register the PubSub processes, ie: `MyApp.PubSub`    |                |
-`:node_name`            | The required and unique name of the node, ie: `System.get_env("NODE")`    |                |
-`:url`                  | The redis-server URL, ie: `redis://username:password@host:port`           |                |
-`:host`                 | The redis-server host IP                                                  | `"127.0.0.1"`  |
-`:port`                 | The redis-server port                                                     | `6379`         |
-`:password`             | The redis-server password                                                 | `""`           |
-`:compression_level`    | Compression level applied to serialized terms (`0` - none, `9` - highest) | `0`            |
-`:socket_opts`          | The redis-server network layer options                                    | `[]`           |
+Option                  | Description                                                                                | Default        |
+:-----------------------| :----------------------------------------------------------------------------------------- | :------------- |
+`:name`                 | The required name to register the PubSub processes, ie: `MyApp.PubSub`                     |                |
+`:node_name`            | The required and unique name of the node, ie: `System.get_env("NODE")`                     |                |
+`:url`                  | The redis-server URL, ie: `redis://username:password@host:port`                            |                |
+`:compression_level`    | Compression level applied to serialized terms (`0` - none, `9` - highest)                  | `0`            |
+`:redis_pool_size`      | The size of the redis connection pool.                                                     | `5`            |
+`:redis_opts`           | Redis connection opts. See: https://hexdocs.pm/redix/Redix.html#start_link/1-redis-options |                |
 
 And also add `:phoenix_pubsub_redis` to your list of applications:
 

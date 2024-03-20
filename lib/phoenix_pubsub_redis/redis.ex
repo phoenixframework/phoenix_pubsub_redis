@@ -6,7 +6,7 @@ defmodule Phoenix.PubSub.Redis do
 
       {Phoenix.PubSub,
        adapter: Phoenix.PubSub.Redis,
-       host: "192.168.1.100",
+       redis_opts: [host: "192.168.1.100"],
        node_name: System.get_env("NODE")}
 
   You will also need to add `:phoenix_pubsub_redis` to your deps:
@@ -20,14 +20,9 @@ defmodule Phoenix.PubSub.Redis do
     * `:url` - The url to the redis server ie: `redis://username:password@host:port`
     * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
     * `:node_name` - The required name of the node, defaults to Erlang --sname flag. It must be unique.
-    * `:host` - The redis-server host IP, defaults `"127.0.0.1"`
-    * `:port` - The redis-server port, defaults `6379`
-    * `:password` - The redis-server password, defaults `""`
-    * `:ssl` - The redis-server ssl option, defaults `false`
     * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
     * `:compression_level` - Compression level applied to serialized terms - from `0` (no compression), to `9` (highest). Defaults `0`
-    * `:socket_opts` - List of options that are passed to the network layer when connecting to the Redis server. Default `[]`
-    * `:sentinel` - Redix sentinel configuration. Default to `nil`
+    * `:redis_opts` - Redis connection opts. See: https://hexdocs.pm/redix/Redix.html#start_link/1-redis-options
 
   """
 
@@ -35,8 +30,8 @@ defmodule Phoenix.PubSub.Redis do
 
   @behaviour Phoenix.PubSub.Adapter
   @redis_pool_size 5
+  @compression_level 0
   @redis_opts [:host, :port, :password, :database, :ssl, :socket_opts, :sentinel]
-  @defaults [host: "127.0.0.1", port: 6379]
 
   ## Adapter callbacks
 
@@ -63,15 +58,14 @@ defmodule Phoenix.PubSub.Redis do
 
   @impl true
   def init(opts) do
+    opts = build_opts(opts)
     pubsub_name = Keyword.fetch!(opts, :name)
     adapter_name = Keyword.fetch!(opts, :adapter_name)
-    compression_level = Keyword.get(opts, :compression_level, 0)
+    compression_level = Keyword.fetch!(opts, :compression_level)
+    redis_opts = Keyword.fetch!(opts, :redis_opts)
+    node_name = Keyword.fetch!(opts, :node_name)
+    redis_pool_size = Keyword.fetch!(opts, :redis_pool_size)
 
-    opts = handle_url_opts(opts)
-    opts = Keyword.merge(@defaults, opts)
-    redis_opts = Keyword.take(opts, @redis_opts)
-
-    node_name = opts[:node_name] || node()
     validate_node_name!(node_name)
 
     :ets.new(adapter_name, [:public, :named_table, read_concurrency: true])
@@ -81,7 +75,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_opts = [
       name: {:local, adapter_name},
       worker_module: Redix,
-      size: opts[:redis_pool_size] || @redis_pool_size,
+      size: redis_pool_size,
       max_overflow: 0
     ]
 
@@ -93,27 +87,29 @@ defmodule Phoenix.PubSub.Redis do
     Supervisor.init(children, strategy: :rest_for_one)
   end
 
-  defp handle_url_opts(opts) do
-    if opts[:url] do
-      merge_url_opts(opts)
-    else
-      opts
-    end
+  @doc false
+  def build_opts(opts) do
+    opts
+    |> Keyword.put_new(:redis_pool_size, @redis_pool_size)
+    |> Keyword.put_new(:compression_level, @compression_level)
+    |> Keyword.put(:redis_opts, redis_opts(opts))
+    |> Keyword.put_new(:node_name, node())
+    |> Keyword.take([
+      :node_name,
+      :compression_level,
+      :name,
+      :adapter_name,
+      :redis_opts,
+      :redis_pool_size
+    ])
   end
 
-  defp merge_url_opts(opts) do
-    info = URI.parse(opts[:url])
+  defp redis_opts(opts) do
+    user_opts = if opts[:url], do: Redix.URI.to_start_options(opts[:url]), else: []
 
-    user_opts =
-      case String.split(info.userinfo || "", ":") do
-        [""] -> []
-        [username] -> [username: username]
-        [username, password] -> [username: username, password: password]
-      end
-
-    opts
-    |> Keyword.merge(user_opts)
-    |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
+    user_opts
+    |> Keyword.merge(Keyword.take(opts, @redis_opts))
+    |> Keyword.merge(Keyword.get(opts, :redis_opts, []))
   end
 
   defp validate_node_name!(node_name) do
