@@ -105,7 +105,7 @@ defmodule Phoenix.PubSub.Redis do
   end
 
   defp redis_opts(opts) do
-    user_opts = if opts[:url], do: Redix.URI.opts_from_uri(opts[:url]), else: []
+    user_opts = if opts[:url], do: Redix.URI.to_start_options(opts[:url]), else: []
 
     user_opts
     |> Keyword.merge(Keyword.take(opts, @redis_opts))

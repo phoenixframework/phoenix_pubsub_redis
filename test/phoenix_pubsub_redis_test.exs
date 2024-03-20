@@ -116,6 +116,7 @@ defmodule Phoenix.PubSub.RedisTest do
                    ssl: true,
                    database: 1,
                    password: "password",
+                   username: "username",
                    port: 5000,
                    host: "example.com"
                  ]
