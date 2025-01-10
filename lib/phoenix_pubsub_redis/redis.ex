@@ -71,7 +71,6 @@ defmodule Phoenix.PubSub.Redis do
     opts = merged_opts(opts)
     redis_opts = Keyword.take(opts, @redis_opts)
 
-
     node_name = opts[:node_name] || node()
     validate_node_name!(node_name)
 
