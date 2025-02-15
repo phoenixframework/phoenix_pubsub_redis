@@ -63,7 +63,7 @@ defmodule Phoenix.PubSub.Redis do
     compression_level = Keyword.get(opts, :compression_level, 0)
 
     opts = handle_url_opts(opts)
-    opts = Keyword.merge(@defaults, opts)
+    opts = merged_opts(opts)
     redis_opts = Keyword.take(opts, @redis_opts)
 
     node_name = opts[:node_name] || node()
@@ -87,7 +87,7 @@ defmodule Phoenix.PubSub.Redis do
 
     Supervisor.init(children, strategy: :rest_for_one)
   end
-
+  
   defp handle_url_opts(opts) do
     if opts[:url] do
       merge_url_opts(opts)
@@ -110,6 +110,14 @@ defmodule Phoenix.PubSub.Redis do
     opts
     |> Keyword.merge(user_opts)
     |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
+  end
+
+  defp merged_opts(opts) do
+    case Keyword.take(opts, [:sentinel]) do
+      [] -> Keyword.merge(@defaults, opts)
+      # Redix doesn't support host and port for Redis Sentinel  
+      [_head | _tail] -> opts
+    end
   end
 
   defp validate_node_name!(node_name) do
