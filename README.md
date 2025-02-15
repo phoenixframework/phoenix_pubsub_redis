@@ -11,7 +11,7 @@ To use Redis as your PubSub adapter, simply add it to your deps and Application'
 ```elixir
 # mix.exs
 defp deps do
-  [{:phoenix_pubsub_redis, "~> 3.0.0"}],
+  [{:phoenix_pubsub_redis, "~> 3.0"}],
 end
 
 # application.ex
