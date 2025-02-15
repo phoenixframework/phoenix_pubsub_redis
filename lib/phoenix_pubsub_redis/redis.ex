@@ -109,6 +109,7 @@ defmodule Phoenix.PubSub.Redis do
       case String.split(info.userinfo || "", ":") do
         [""] -> []
         [username] -> [username: username]
+        ["", password] -> [password: password]
         [username, password] -> [username: username, password: password]
       end
 
