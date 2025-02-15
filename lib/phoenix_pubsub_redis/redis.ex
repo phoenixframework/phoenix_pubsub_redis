@@ -9,12 +9,6 @@ defmodule Phoenix.PubSub.Redis do
        host: "192.168.1.100",
        node_name: System.get_env("NODE")}
 
-  You will also need to add `:phoenix_pubsub_redis` to your deps:
-
-      defp deps do
-        [{:phoenix_pubsub_redis, "~> 2.1.0"}]
-      end
-
   ## Options
 
     * `:url` - The url to the redis server ie: `redis://username:password@host:port`
