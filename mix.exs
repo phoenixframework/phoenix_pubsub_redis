@@ -8,7 +8,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
     [
       app: :phoenix_pubsub_redis,
       version: @version,
-      elixir: "~> 1.6",
+      elixir: "~> 1.13",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       package: package(),
@@ -29,7 +29,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
   defp deps do
     [
       phoenix_pubsub(),
-      {:redix, "~> 0.10.0 or ~> 1.0"},
+      {:redix, "~> 1.0"},
       {:ex_doc, ">= 0.0.0", only: :docs},
       {:poolboy, "~> 1.5.1 or ~> 1.6"}
     ]
