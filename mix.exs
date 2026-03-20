@@ -1,7 +1,7 @@
 defmodule PhoenixPubsubRedis.Mixfile do
   use Mix.Project
 
-  @version "3.0.0"
+  @version "3.0.1"
   @source_url "https://github.com/phoenixframework/phoenix_pubsub_redis"
 
   def project do
