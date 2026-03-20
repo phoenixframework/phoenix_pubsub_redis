@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  mix_test:
+    name: mix test (OTP ${{matrix.otp}} | Elixir ${{matrix.elixir}})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: 1.13
+            otp: 25.3
+
+          - elixir: 1.16
+            otp: 26.2
+
+          - elixir: 1.18
+            otp: 27.3
+
+          - elixir: 1.19
+            otp: 28.4
+            lint: lint
+
+          # run against latest Elixir to catch warnings early
+          - elixir: main-otp-28
+            otp: maint-28
+
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Restore deps and _build cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            deps
+            _build
+          key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Remove compiled application files
+        run: mix clean
+
+      - name: Compile dependencies
+        run: mix compile
+        if: ${{ !matrix.lint }}
+        env:
+          MIX_ENV: test
+
+      - name: Compile & lint dependencies
+        run: mix compile --warnings-as-errors
+        if: ${{ matrix.lint }}
+        env:
+          MIX_ENV: test
+
+      - name: Format
+        run: mix format --check-formatted
+        if: ${{ matrix.lint }}
+
+      - name: Run tests
+        run: |
+          mix test
+        env:
+          REDIS_URL: "redis://localhost:6379"
