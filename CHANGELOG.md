@@ -1,5 +1,15 @@
 # Changelog
 
+## Development
+
+### Enhancements
+
+* Delegate Redis connection options to Redix, replacing hand-rolled URL parsing
+
+### Deprecations
+
+* Top-level Redis connection keys (:host, :port, :password, :url, etc.) are deprecated in favor of the :redis\_opts option
+
 ## v3.0.1 (2021-06-14)
   * Bump redix dependency
 
