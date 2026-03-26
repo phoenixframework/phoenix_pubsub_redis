@@ -6,26 +6,59 @@ defmodule Phoenix.PubSub.Redis do
 
       {Phoenix.PubSub,
        adapter: Phoenix.PubSub.Redis,
-       redis_opts: [host: "192.168.1.100"],
+       redis_opts: "redis://localhost:6379",
        node_name: System.get_env("NODE")}
 
   ## Options
 
-    * `:url` - The url to the redis server ie: `redis://username:password@host:port`
-    * `:name` - The required name to register the PubSub processes, ie: `MyApp.PubSub`
-    * `:node_name` - The required name of the node, defaults to Erlang --sname flag. It must be unique.
-    * `:redis_pool_size` - The size of the redis connection pool. Defaults `5`
-    * `:compression_level` - Compression level applied to serialized terms - from `0` (no compression), to `9` (highest). Defaults `0`
-    * `:redis_opts` - Redis connection opts. See: https://hexdocs.pm/redix/Redix.html#start_link/1-redis-options
+    * `:name` - The required name to register the PubSub processes, e.g. `MyApp.PubSub`.
+    * `:node_name` - The name of the node, used to filter out messages broadcast by the same node. Defaults to `node()`. Must be unique.
+    * `:redis_pool_size` - The size of the Redis connection pool. Defaults to `5`.
+    * `:compression_level` - Compression level applied to serialized terms - `0` (none) to `9` (highest). Defaults to `0`.
+    * `:redis_opts` - Redix connection options - either a Redis URL string or a keyword list. See `Redix.start_link/1` for more information.
 
   """
 
   use Supervisor
 
   @behaviour Phoenix.PubSub.Adapter
-  @redis_pool_size 5
-  @redis_opts [:host, :port, :username, :password, :database, :ssl, :socket_opts, :sentinel]
-  @defaults [host: "127.0.0.1", port: 6379]
+
+  @schema NimbleOptions.new!(
+            node_name: [
+              type: :atom,
+              doc: "The name of the node. Defaults to `node()`. Must be unique."
+            ],
+            redis_pool_size: [
+              type: :pos_integer,
+              default: 5,
+              doc: "The size of the Redis connection pool."
+            ],
+            compression_level: [
+              type: {:in, 0..9},
+              default: 0,
+              doc: "Compression level applied to serialized terms - `0` (none) to `9` (highest)."
+            ],
+            redis_opts: [
+              type: {:or, [:string, :keyword_list]},
+              default: [],
+              doc:
+                "Redix connection options - either a Redis URL string or a keyword list. " <>
+                  "See `Redix.start_link/1` for more information."
+            ]
+          )
+
+  # Using top-level configuration keys for Redis configuration is deprecated
+  @redis_top_level_keys [
+    :host,
+    :port,
+    :username,
+    :password,
+    :database,
+    :ssl,
+    :socket_opts,
+    :sentinel,
+    :url
+  ]
 
   ## Adapter callbacks
 
@@ -52,15 +85,14 @@ defmodule Phoenix.PubSub.Redis do
 
   @impl true
   def init(opts) do
+    opts = build_opts(opts)
     pubsub_name = Keyword.fetch!(opts, :name)
     adapter_name = Keyword.fetch!(opts, :adapter_name)
-    compression_level = Keyword.get(opts, :compression_level, 0)
+    compression_level = Keyword.fetch!(opts, :compression_level)
+    redis_opts = Keyword.fetch!(opts, :redis_opts)
+    node_name = Keyword.fetch!(opts, :node_name)
+    redis_pool_size = Keyword.fetch!(opts, :redis_pool_size)
 
-    opts = handle_url_opts(opts)
-    opts = Keyword.merge(@defaults, opts)
-    redis_opts = Keyword.take(opts, @redis_opts)
-
-    node_name = opts[:node_name] || node()
     validate_node_name!(node_name)
 
     :ets.new(adapter_name, [:public, :named_table, read_concurrency: true])
@@ -70,7 +102,7 @@ defmodule Phoenix.PubSub.Redis do
     pool_opts = [
       name: {:local, adapter_name},
       worker_module: Redix,
-      size: opts[:redis_pool_size] || @redis_pool_size,
+      size: redis_pool_size,
       max_overflow: 0
     ]
 
@@ -82,28 +114,67 @@ defmodule Phoenix.PubSub.Redis do
     Supervisor.init(children, strategy: :rest_for_one)
   end
 
-  defp handle_url_opts(opts) do
-    if opts[:url] do
-      merge_url_opts(opts)
-    else
-      opts
-    end
+  @doc false
+  def build_opts(opts) do
+    {internal, user_opts} =
+      Keyword.split(opts, [:name, :adapter_name, :adapter, :pool_size, :registry_size])
+
+    {top_level_redis, user_opts} = Keyword.split(user_opts, @redis_top_level_keys)
+
+    validated =
+      user_opts
+      |> Keyword.put_new(:node_name, node())
+      |> NimbleOptions.validate!(@schema)
+
+    redis_opts = build_redis_opts(top_level_redis, validated[:redis_opts])
+
+    internal
+    |> Keyword.put(:node_name, validated[:node_name])
+    |> Keyword.put(:compression_level, validated[:compression_level])
+    |> Keyword.put(:redis_pool_size, validated[:redis_pool_size])
+    |> Keyword.put(:redis_opts, redis_opts)
   end
 
-  defp merge_url_opts(opts) do
-    info = URI.parse(opts[:url])
+  defp build_redis_opts(top_level, redis_opts) do
+    case {top_level, redis_opts} do
+      # no options provided, use defaults
+      {[], []} ->
+        []
 
-    user_opts =
-      case String.split(info.userinfo || "", ":") do
-        [""] -> []
-        [username] -> [username: username]
-        ["", password] -> [password: password]
-        [username, password] -> [username: username, password: password]
-      end
+      {[_ | _], []} ->
+        keys = top_level |> Keyword.keys() |> Enum.map_join(", ", &inspect/1)
 
-    opts
-    |> Keyword.merge(user_opts)
-    |> Keyword.merge(host: info.host, port: info.port || @defaults[:port])
+        IO.warn(
+          "Passing Redis connection keys at the top level is deprecated. " <>
+            "Move #{keys} inside the :redis_opts option instead.",
+          []
+        )
+
+        case Keyword.pop(top_level, :url) do
+          {nil, opts} ->
+            opts
+
+          {url, []} ->
+            url
+
+          {url, _other} ->
+            IO.warn(
+              "Passing :url with other top-level Redis keys is not supported. " <>
+                "Only the :url value will be used. Use redis_opts: \"#{url}\" instead.",
+              []
+            )
+
+            url
+        end
+
+      {[], redis_opts} when redis_opts != [] ->
+        redis_opts
+
+      # deprecated and new options both provided
+      _multiple ->
+        raise ArgumentError,
+              "only one of :redis_opts or top-level Redis keys may be provided, not both"
+    end
   end
 
   defp validate_node_name!(node_name) do

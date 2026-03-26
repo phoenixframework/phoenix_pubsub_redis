@@ -61,7 +61,7 @@ defmodule Phoenix.PubSub.RedisServer do
       node_name: node_name,
       redix_pid: nil,
       reconnect_timer: nil,
-      redis_opts: [sync_connect: true] ++ redis_opts
+      redis_opts: redis_opts
     }
 
     {:ok, establish_conn(state)}
@@ -130,13 +130,21 @@ defmodule Phoenix.PubSub.RedisServer do
   end
 
   defp establish_conn(%{redis_opts: redis_opts} = state) do
-    case Redix.PubSub.start_link(redis_opts) do
+    case start_redix_pubsub(redis_opts) do
       {:ok, redix_pid} ->
         establish_success(%{state | redix_pid: redix_pid})
 
       {:error, _} ->
         establish_failed(state)
     end
+  end
+
+  defp start_redix_pubsub(url) when is_binary(url) do
+    Redix.PubSub.start_link(url, sync_connect: true)
+  end
+
+  defp start_redix_pubsub(opts) when is_list(opts) do
+    Redix.PubSub.start_link(opts ++ [sync_connect: true])
   end
 
   defp redis_namespace(adapter_name), do: "phx:#{adapter_name}"

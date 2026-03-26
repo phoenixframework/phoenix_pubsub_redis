@@ -30,6 +30,7 @@ defmodule PhoenixPubsubRedis.Mixfile do
     [
       phoenix_pubsub(),
       {:redix, "~> 1.0"},
+      {:nimble_options, "~> 1.0"},
       {:ex_doc, ">= 0.0.0", only: :docs},
       {:poolboy, "~> 1.5.1 or ~> 1.6"}
     ]
