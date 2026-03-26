@@ -2,6 +2,8 @@
 
 ## Development
 
+## v3.1.0 (2026-03-26)
+
 ### Enhancements
 
 * Delegate Redis connection options to Redix, replacing hand-rolled URL parsing
