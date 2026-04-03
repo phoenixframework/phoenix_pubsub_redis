@@ -25,7 +25,7 @@ defmodule Phoenix.PubSub.Redis do
 
   @schema NimbleOptions.new!(
             node_name: [
-              type: :atom,
+              type: {:or, [:atom, :string]},
               doc: "The name of the node. Defaults to `node()`. Must be unique."
             ],
             redis_pool_size: [
