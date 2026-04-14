@@ -2,6 +2,12 @@
 
 ## Development
 
+## v3.1.1 (2026-04-14)
+
+### Bug Fixes
+
+* Allow strings for `node_name`
+
 ## v3.1.0 (2026-03-26)
 
 ### Enhancements
